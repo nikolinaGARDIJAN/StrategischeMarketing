@@ -1,0 +1,986 @@
+<title>SMDA Nakijkhulp</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
+<style>
+/* Layout: beoordelingsformulier — kopbalk met opdracht-wissel, tabbladen, één werkkolom; elk profiel krijgt een eigen inktkleur */
+:root{
+  --bg:#f3f5f4; --surface:#ffffff; --sunk:#e8ecea; --line:#d3dad7; --ink:#18232a; --muted:#5b6a70;
+  --c-nikolina:#a8295f; --c-juniora:#0d7169; --c-nusima:#4548b8; --c-levi:#a35f00;
+  --good:#1f7a3d; --good-bg:#e3f2e7; --warn:#946200; --warn-bg:#fbf0d6; --bad:#b3261e; --bad-bg:#fbe4e2; --idle-bg:#eceff0;
+  --mark:#ffe58a;
+  --f-display:"Familjen Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --f-body:"Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --f-mono:"IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --acc:var(--c-nikolina);
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121719; --surface:#1a2124; --sunk:#232c30; --line:#334046; --ink:#e6ecee; --muted:#9aa9ae;
+  --c-nikolina:#f07aa9; --c-juniora:#4fc7bb; --c-nusima:#9a9cf5; --c-levi:#f0a948;
+  --good:#7fd69a; --good-bg:#183326; --warn:#f0c463; --warn-bg:#3a2f12; --bad:#ff8f85; --bad-bg:#3d1b19; --idle-bg:#273034;
+  --mark:#6b5a12; color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --bg:#121719; --surface:#1a2124; --sunk:#232c30; --line:#334046; --ink:#e6ecee; --muted:#9aa9ae;
+  --c-nikolina:#f07aa9; --c-juniora:#4fc7bb; --c-nusima:#9a9cf5; --c-levi:#f0a948;
+  --good:#7fd69a; --good-bg:#183326; --warn:#f0c463; --warn-bg:#3a2f12; --bad:#ff8f85; --bad-bg:#3d1b19; --idle-bg:#273034;
+  --mark:#6b5a12; color-scheme:dark;}
+*{box-sizing:border-box}
+html,body{background:var(--bg);color:var(--ink)}
+body{font-family:var(--f-body);font-size:15px;line-height:1.55}
+.app[data-p="nikolina"]{--acc:var(--c-nikolina)} .app[data-p="juniora"]{--acc:var(--c-juniora)}
+.app[data-p="nusima"]{--acc:var(--c-nusima)} .app[data-p="levi"]{--acc:var(--c-levi)}
+.wrap{max-width:1060px;margin:0 auto;padding-inline:16px}
+h1,h2,h3,h4{font-family:var(--f-display);text-wrap:balance;line-height:1.2;margin:0}
+h1{font-size:1.9rem;font-weight:700} h2{font-size:1.35rem;font-weight:700} h3{font-size:1.08rem;font-weight:600} h4{font-size:.98rem;font-weight:600}
+p{margin:0} a{color:var(--acc)}
+.muted{color:var(--muted)} .small{font-size:.86rem} .mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.label{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.btn{display:inline-flex;align-items:center;gap:.45em;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:.5em .95em;font-weight:700;font-size:.92rem}
+.btn:hover{border-color:var(--acc)}
+.btn.primary{background:var(--acc);border-color:var(--acc);color:#fff}
+:root[data-theme="dark"] .btn.primary{color:#111}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .btn.primary{color:#111}}
+.btn.ghost{border-color:transparent;background:transparent}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.sm{padding:.3em .65em;font-size:.82rem}
+input[type=text],input[type=url],textarea,select{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:.55em .7em}
+textarea{resize:vertical;min-height:90px}
+.field{display:grid;gap:.3rem}
+.stack{display:grid;gap:1rem}
+.row{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center}
+.spacer{flex:1}
+
+/* kopbalk */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;flex-wrap:wrap;align-items:center;gap:.75rem;padding-block:.7rem}
+.brand{font-family:var(--f-display);font-weight:700;font-size:1.05rem;display:flex;align-items:center;gap:.5rem;background:none;border:0;padding:0}
+.brand .dot{width:12px;height:12px;border-radius:3px;background:var(--acc)}
+.tasksw{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.tasksw button{border:0;background:transparent;padding:.4em .9em;font-family:var(--f-mono);font-weight:500;font-size:.88rem}
+.tasksw button[aria-pressed="true"]{background:var(--acc);color:var(--surface)}
+.who{display:flex;align-items:center;gap:.5rem;border:1px solid var(--line);border-radius:999px;padding:.25rem .8rem .25rem .25rem;background:var(--surface);font-weight:700}
+.avatar{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--acc);color:var(--surface);font-family:var(--f-display);font-weight:700}
+.tabs{display:flex;gap:.2rem;overflow-x:auto;border-bottom:1px solid var(--line);margin-top:.2rem}
+.tabs button{border:0;background:none;padding:.65rem .85rem;font-weight:700;color:var(--muted);border-bottom:3px solid transparent;white-space:nowrap}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--acc)}
+main{padding-block:1.4rem 4rem}
+.banner{border:1px solid var(--line);border-left:4px solid var(--warn);background:var(--warn-bg);padding:.7rem .9rem;border-radius:8px;margin-top:1rem}
+.banner.info{border-left-color:var(--acc);background:var(--surface)}
+
+/* profielkeuze */
+.hero{padding-block:2.4rem 1.2rem;display:grid;gap:.7rem;max-width:62ch}
+.profiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:1rem;margin-top:1.2rem}
+.pcard{text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:1.1rem;display:grid;gap:.8rem;border-top:6px solid var(--pc)}
+.pcard:hover{border-color:var(--pc)}
+.pcard .avatar{width:46px;height:46px;font-size:1.3rem;background:var(--pc)}
+.pcard h3{font-size:1.3rem}
+
+/* kaarten */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:1.1rem}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1rem}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1rem}
+.grid2>*,.grid3>*{min-width:0}
+.tcard{display:grid;gap:.7rem;align-content:start}
+.tcard .code{font-family:var(--f-mono);font-weight:500;color:var(--acc)}
+.bignum{font-family:var(--f-display);font-weight:700;font-size:2.6rem;line-height:1;font-variant-numeric:tabular-nums}
+.chip{display:inline-flex;align-items:center;gap:.3em;border-radius:999px;padding:.12em .6em;font-size:.78rem;font-weight:700;background:var(--idle-bg);color:var(--muted);white-space:nowrap}
+.chip.good{background:var(--good-bg);color:var(--good)} .chip.warn{background:var(--warn-bg);color:var(--warn)} .chip.bad{background:var(--bad-bg);color:var(--bad)}
+.chip.acc{background:var(--sunk);color:var(--acc)}
+
+/* upload */
+.drop{border:2px dashed var(--line);border-radius:12px;padding:1.4rem;text-align:center;display:grid;gap:.5rem;justify-items:center;background:var(--surface)}
+.drop.over{border-color:var(--acc);background:var(--sunk)}
+.pages{display:grid;gap:.6rem;max-height:540px;overflow:auto;padding-right:.3rem}
+.pg{border:1px solid var(--line);border-radius:8px;padding:.6rem .8rem;background:var(--bg)}
+.pg pre{white-space:pre-wrap;word-break:break-word;margin:.3rem 0 0;font-family:var(--f-body);font-size:.88rem}
+
+/* beoordeling */
+.gradebox{display:grid;grid-template-columns:auto 1fr;gap:1.3rem;align-items:center}
+@media (max-width:560px){.gradebox{grid-template-columns:1fr}}
+.gradenum{font-family:var(--f-display);font-weight:700;font-size:4.2rem;line-height:.9;color:var(--acc);font-variant-numeric:tabular-nums}
+.meter{display:flex;gap:3px;margin-top:.5rem;flex-wrap:wrap}
+.meter i{width:16px;height:10px;border-radius:2px;background:var(--idle-bg)}
+.meter i.on{background:var(--good)} .meter i.half{background:var(--warn)}
+.list{display:grid;gap:.7rem;margin:0;padding:0;list-style:none}
+.item{border:1px solid var(--line);border-radius:10px;padding:.8rem .95rem;background:var(--surface);display:grid;gap:.45rem}
+.item.st-good{border-left:4px solid var(--good)} .item.st-warn{border-left:4px solid var(--warn)} .item.st-bad{border-left:4px solid var(--bad)} .item.st-idle{border-left:4px solid var(--line)}
+.ihead{display:flex;gap:.6rem;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
+.ihead>div{min-width:0;flex:1}
+.ref{font-family:var(--f-mono);font-size:.74rem;color:var(--muted);white-space:nowrap}
+.quote{display:block;width:100%;text-align:left;border:0;border-left:3px solid var(--acc);background:var(--sunk);padding:.4rem .6rem;border-radius:0 6px 6px 0;font-style:italic;font-size:.9rem}
+.quote:hover{background:var(--idle-bg)}
+.quote .pgn{font-style:normal;font-family:var(--f-mono);font-size:.74rem;color:var(--acc);margin-left:.4rem;white-space:nowrap}
+.tip{background:var(--bg);border-radius:8px;padding:.5rem .7rem;font-size:.92rem}
+.tip b{color:var(--acc)}
+details{border-top:1px solid var(--line);padding-top:.4rem}
+summary{cursor:pointer;font-weight:700;font-size:.88rem;color:var(--muted)}
+.gtable{overflow-x:auto}
+.gtable table{border-collapse:collapse;font-family:var(--f-mono);font-size:.82rem;font-variant-numeric:tabular-nums}
+.gtable td,.gtable th{border:1px solid var(--line);padding:.3rem .5rem;text-align:center}
+.gtable th{background:var(--sunk);font-weight:500;text-align:left}
+.gtable td.hit{background:var(--acc);color:var(--surface);font-weight:500}
+.sgtext{border-left:3px solid var(--line);padding:.2rem 0 .2rem .8rem;font-size:.93rem;max-width:72ch}
+.sgtext ul{margin:.3rem 0;padding-left:1.2rem}
+
+/* AI-meter */
+.gauge{height:12px;border-radius:999px;background:linear-gradient(90deg,var(--good),var(--warn),var(--bad));position:relative;margin:.6rem 0 .3rem}
+.gauge b{position:absolute;top:-5px;width:4px;height:22px;background:var(--ink);border-radius:2px;transform:translateX(-2px)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.6rem}
+.stat{background:var(--bg);border-radius:8px;padding:.6rem .7rem}
+.stat .v{font-family:var(--f-display);font-weight:700;font-size:1.4rem;font-variant-numeric:tabular-nums}
+.fix{display:grid;grid-template-columns:1fr 1fr;gap:.5rem}
+@media (max-width:560px){.fix{grid-template-columns:1fr}}
+.fix>div{border-radius:6px;padding:.4rem .6rem;font-size:.9rem;min-width:0;word-break:break-word}
+.fix .from{background:var(--bad-bg)} .fix .to{background:var(--good-bg)}
+
+/* chat */
+.chat{display:grid;grid-template-rows:1fr auto;height:min(72vh,720px);border:1px solid var(--line);border-radius:12px;background:var(--surface);overflow:hidden}
+.msgs{overflow:auto;padding:1rem;display:grid;gap:.8rem;align-content:start}
+.msg{max-width:85%;padding:.6rem .85rem;border-radius:12px;min-width:0;word-break:break-word}
+.msg.user{justify-self:end;background:var(--acc);color:var(--surface);border-bottom-right-radius:3px}
+.msg.assistant{justify-self:start;background:var(--sunk);border-bottom-left-radius:3px}
+.msg p+p,.msg ul,.msg ol{margin-top:.45rem} .msg ul,.msg ol{padding-left:1.2rem;margin-bottom:0} .msg h4{margin-top:.5rem}
+.composer{border-top:1px solid var(--line);padding:.7rem;display:grid;gap:.5rem}
+.composer .row textarea{min-height:46px;flex:1;min-width:0}
+.sugg{display:flex;gap:.4rem;flex-wrap:wrap}
+.sugg button{border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:.2rem .7rem;font-size:.82rem}
+
+/* voortgang & viewer */
+.busy{display:grid;gap:.4rem;border:1px solid var(--line);border-radius:10px;padding:.9rem;background:var(--surface)}
+.bar{height:6px;border-radius:999px;background:var(--idle-bg);overflow:hidden}
+.bar i{display:block;height:100%;width:35%;background:var(--acc);border-radius:999px;animation:slide 1.4s ease-in-out infinite}
+@keyframes slide{0%{transform:translateX(-100%)}100%{transform:translateX(300%)}}
+@media (prefers-reduced-motion:reduce){.bar i{animation:none;width:100%;opacity:.5}}
+.overlay{position:fixed;inset:0;background:rgba(10,15,18,.55);z-index:20;display:grid;place-items:center;padding:16px}
+.viewer{background:var(--surface);border-radius:12px;width:min(820px,100%);max-height:88vh;display:grid;grid-template-rows:auto 1fr;overflow:hidden;border:1px solid var(--line)}
+.viewer header{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;padding:.8rem 1rem;border-bottom:1px solid var(--line)}
+.viewer .body{overflow:auto;padding:1rem 1.2rem}
+.viewer pre{white-space:pre-wrap;word-break:break-word;font-family:var(--f-body);font-size:.93rem;margin:0}
+mark{background:var(--mark);color:inherit;border-radius:2px;padding:0 .1em}
+.empty{text-align:center;padding:2.5rem 1rem;display:grid;gap:.6rem;justify-items:center}
+.srcitem{display:flex;gap:.7rem;align-items:flex-start;border:1px solid var(--line);border-radius:10px;padding:.7rem .85rem;background:var(--surface)}
+.srcitem>div{min-width:0;flex:1}
+.kind{font-family:var(--f-mono);font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;padding:.15rem .4rem;border-radius:4px;background:var(--sunk);color:var(--acc)}
+.foot{margin-top:2.5rem;border-top:1px solid var(--line);padding-top:1rem}
+</style>
+
+<div id="app" class="app"></div>
+<div id="overlay" class="overlay" hidden></div>
+
+<script>
+/* ============ Studiegids (SMDA 2026-2027 v5) & CE-skills ============ */
+const PROFILES = [
+  {id:"nikolina", name:"Nikolina"}, {id:"juniora", name:"Juniora"},
+  {id:"nusima", name:"Nusima"}, {id:"levi", name:"Levi"}
+];
+const DEADLINE = new Date("2026-10-25T23:59:00");
+
+const TASKS = {
+  SM1:{
+    code:"SM1", title:"Analyse live case & Advies", kind:"Groepsopdracht", ref:"Studiegids blz. 4",
+    product:"Rapportage in PowerPoint (of ander presentatieformat), inclusief bronvermeldingen en AI-verantwoording. Eindpresentatie max. 10 minuten aan de opdrachtgever (lesweek 7).",
+    desc:"Voor een echte opdrachtgever doe je als groep een uitgebreide en diepgaande marketinganalyse op macro-, meso- en microniveau (deskresearch en optioneel primair onderzoek). De marktinzichten sluit je af met een SWOT, waarna je een compleet advies presenteert.",
+    reqs:[
+      {id:"R1", label:"Macro-analyse: context canvas / DESTEP / trends", ref:"blz. 8 (lesweek 2)"},
+      {id:"R2", label:"Meso: bedrijfstak, kanaalanalyse (hoe kopen afnemers, customer journeys, kanaalstructuur) en concurrentie (concurrentiekrachten, profielen, huidige positionering)", ref:"blz. 8 (lesweek 2)"},
+      {id:"R3", label:"Meso: markt (omvang, kenmerken, spelers, ontwikkelingen) en afnemers (segmenten, behoeften, cognitive mapping: aandachttriggers, sociale verbindingen, beloningsmotivatoren)", ref:"blz. 8 (lesweek 3)"},
+      {id:"R4", label:"Micro / interne analyse: missie, visie, business scope, waardepropositie, BMC, productportfolio, (marketing)assets, financiële resultaten", ref:"blz. 9 (lesweek 4)"},
+      {id:"R5", label:"Onderzoeksmethoden: deskresearch (review-, website-, social media-, concurrentieanalyse); primair onderzoek optioneel", ref:"blz. 7 (lesweek 1)"},
+      {id:"R6", label:"Marktinzichten afgesloten met een SWOT", ref:"blz. 4 en blz. 9 (lesweek 6)"},
+      {id:"R7", label:"Advies: Business Model Canvas (BMC)", ref:"blz. 4"},
+      {id:"R8", label:"Advies: missie en visie", ref:"blz. 4"},
+      {id:"R9", label:"Advies: segmentatie, targeting (doelgroepkeuze), positionering (STP) + uitwerking doelgroep", ref:"blz. 4"},
+      {id:"R10", label:"Advies: cognitief kompas (waardepropositie, merkverhaal, klantervaring, aandachttriggers, sociale verbindingen, beloningsmotivatoren)", ref:"blz. 4"},
+      {id:"R11", label:"Advies: activiteiten / KPI's (meetbaar) / kosten / baten, incl. aanbevelingen voor datastrategie en AI", ref:"blz. 3 (leeruitkomst) en blz. 4"},
+      {id:"R12", label:"Presentatie: informatief, logische structuur, vormgeving en multimedia professioneel, passend bij beroepssituatie, max. 10 min", ref:"blz. 4"},
+      {id:"R13", label:"Bronverwijzingen per dia (APA) en bronnenlijst", ref:"blz. 4"},
+      {id:"R14", label:"AI-verantwoording als bijlage (prompts + AI-resultaten, APA-vermelding)", ref:"blz. 4 en blz. 7"}
+    ]
+  },
+  SM2:{
+    code:"SM2", title:"Dataplan / dashboard / data storytelling", kind:"Individueel", ref:"Studiegids blz. 4–5",
+    product:"Opdracht in presentatievorm (inclusief bronvermeldingen en AI-verantwoording). Toelichting in het individuele assessment + verdiepende vragen beantwoorden.",
+    desc:"Voor de eigen organisatie voer je een data-maturity- en AI-maturityscan uit en reflecteer je op de implicaties en vervolgstappen, bijv. door te benchmarken met DDMA-onderzoeken (DDMO). Daarnaast maak je een dashboard en een bijbehorende communicatie-uiting (data storytelling) van data van je eigen organisatie. NB: onderbouw met minstens de theorie van DDMA en Marketing Denken Marketing Doen H10.",
+    reqs:[
+      {id:"R1", label:"Data-maturityscan eigen organisatie", ref:"blz. 4"},
+      {id:"R2", label:"AI-maturityscan eigen organisatie", ref:"blz. 4"},
+      {id:"R3", label:"Benchmark met relevante DDMA-/DDMO-onderzoeken", ref:"blz. 4"},
+      {id:"R4", label:"Reflectie op de scans + implicaties en vervolgstappen voor de organisatie", ref:"blz. 4"},
+      {id:"R5", label:"Dashboard met data van de eigen organisatie (databronnen, marketing metrics)", ref:"blz. 4 en blz. 9 (lesweek 5)"},
+      {id:"R6", label:"Data storytelling: bijbehorende communicatie-uiting", ref:"blz. 4 en blz. 9"},
+      {id:"R7", label:"Theoretische onderbouwing: minstens DDMA en Marketing Denken Marketing Doen H10", ref:"blz. 5 (NB1)"},
+      {id:"R8", label:"Presentatievorm, geschikt voor max. 7 min toelichting in het assessment", ref:"blz. 5"},
+      {id:"R9", label:"Bronvermeldingen / literatuurlijst (APA)", ref:"blz. 5"},
+      {id:"R10", label:"AI-verantwoording (prompts + AI-resultaten in bijlage, APA)", ref:"blz. 5 en blz. 7"}
+    ]
+  },
+  SM3:{
+    code:"SM3", title:"Reflectie & Portfolio-assessment", kind:"Individueel", ref:"Studiegids blz. 5, 18–19",
+    product:"Portfolio-assessment: Persoonlijk Ontwikkelformulier, Persoonlijk Reflectieformulier en korte presentatie (max. 7 min) van SM2.",
+    desc:"Het individuele assessment gaat over de persoonlijke ontwikkeling en de reflectie op de ontwikkelde skills in de context van de beroepssituatie.",
+    reqs:[
+      {id:"R1", label:"Korte presentatie (max. 7 min) van de inhoud van SM2", ref:"blz. 5"},
+      {id:"R2", label:"In hoeverre zijn de leeruitkomsten behaald + bewijs", ref:"blz. 5 (leeruitkomst blz. 3)"},
+      {id:"R3", label:"Professionele identiteit: rol van marketingconsultant en strategisch marketeer + bewijs", ref:"blz. 5"},
+      {id:"R4", label:"Skills ontwikkeld tot minstens niveau 2 + bewijs (CE-skills)", ref:"blz. 5 en blz. 6"},
+      {id:"R5", label:"Ontwikkeling aan de hand van feedback (docent, medestudent)", ref:"blz. 5"},
+      {id:"R6", label:"Persoonlijk ontwikkelplan: geleerd vorige module, min. 3 ontwikkelpunten, concrete acties, SMART-resultaat, wat nodig van docent/coach/medestudenten, middelen, planning", ref:"blz. 18 (bijlage 1)"},
+      {id:"R7", label:"Reflectieformulier: leerdoelen, skills, ontwikkeling aangetoond (bv. STARRTT), wat ging goed, wat kan beter, wat volgende keer anders, wat nodig", ref:"blz. 19 (bijlage 2)"},
+      {id:"R8", label:"Expliciete reflectie op AI-gebruik: hoe gebruikt, wat ermee gedaan, hoe betrouwbaarheid/toepasbaarheid geverifieerd", ref:"blz. 7"}
+    ]
+  }
+};
+
+const RUBRIC_BASE = [
+  {skill:"Kritisch denken", ce:"CE-skills blz. 3", items:[
+    ["K1","Je doet met een passende methodiek betrouwbaar onderzoek waarbij bronnen (incl. AI-output) zijn getoetst aan de AAOCC-criteria"],
+    ["K2","Je analyseert m.b.v. kritische vragen waardoor je goed kunt onderbouwen en beargumenteren"],
+    ["K3","Je toont de kennis om vanuit verschillende perspectieven naar een probleem en oplossing te kijken"]]},
+  {skill:"Creativiteit", ce:"CE-skills blz. 4", items:[
+    ["C1","Vanuit een innovatieve mindset worden problemen verkend en oplossingen bedacht"],
+    ["C2","Je kijkt vanuit verschillende perspectieven en kennis van nieuwste (marketing)ontwikkelingen naar een passende oplossing voor problemen"]]},
+  {skill:"Nieuwsgierigheid", ce:"CE-skills blz. 5", items:[
+    ["N1","Je verdiept je in onderwerpen door het bestuderen van informatie uit meerdere gevalideerde bronnen en perspectieven"],
+    ["N2","Je verplaatst je in een ander (doelgroep) en stelt vragen over bijdragen van andere studentengroepen"],
+    ["N3","Je vermijdt bewust vanuit vooroordelen en aannames te denken en te handelen"]]},
+  {skill:"Communiceren", ce:"CE-skills blz. 6–7", items:[
+    ["CO1","Je brengt informatie op een overtuigende, heldere, gestructureerde en gevisualiseerde wijze over aan anderen"],
+    ["CO2","Je maakt gebruik van passende communicatiemiddelen / tools (inclusief AI)"],
+    ["CO3","Je interacteert gemakkelijk met diverse stakeholders en doelgroepen in verschillende communicatieve situaties"]]},
+  {skill:"Samenwerken", ce:"CE-skills blz. 7–8", items:[
+    ["S1","Je draagt actief bij aan het groepsresultaat en de groepsdynamiek in de klas"],
+    ["S2","Je schept voorwaarden voor een goede samenwerking"],
+    ["S3","Je reflecteert eerlijk op hoe de samenwerking is verlopen"]]},
+  {skill:"Commercieel bewustzijn", ce:"CE-skills blz. 10", items:[
+    ["CB1","Je begrijpt de behoeften, wensen, waarden van de doelgroep en weet wat haar beweegt"],
+    ["CB2","Je bent in staat om binnen de kaders van de organisatie en klantbehoeften waarde te creëren voor de klant, de organisatie, maatschappij/planeet"]]}
+];
+const RUBRIC_ZELF = {skill:"Persoonlijk leiderschap / Zelfsturing", ce:"CE-skills blz. 13", items:[
+  ["Z1","Je neemt verantwoordelijkheid voor je eigen leerproces"],
+  ["Z2","Je kent je persoonlijke normen, waarden, drijfveren, talenten en valkuilen en het effect daarvan op je beroepsmatig handelen"],
+  ["Z3","Je laat met bewijsmateriaal zien wat (van welke feedback) je hebt geleerd en waar je nog in wilt groeien"]]};
+const RUBRIC_REFS = {
+  SM1:{"Kritisch denken":"blz. 11","Creativiteit":"blz. 12","Nieuwsgierigheid":"blz. 12","Communiceren":"blz. 12","Samenwerken":"blz. 13","Commercieel bewustzijn":"blz. 13"},
+  SM23:{"Kritisch denken":"blz. 14","Creativiteit":"blz. 15","Nieuwsgierigheid":"blz. 15","Communiceren":"blz. 15","Samenwerken":"blz. 16","Commercieel bewustzijn":"blz. 16","Persoonlijk leiderschap / Zelfsturing":"blz. 16"}
+};
+function rubricFor(task){
+  const groups = task==="SM1" ? RUBRIC_BASE : [...RUBRIC_BASE, RUBRIC_ZELF];
+  const refs = task==="SM1" ? RUBRIC_REFS.SM1 : RUBRIC_REFS.SM23;
+  return groups.map(g=>({...g, ref:refs[g.skill]}));
+}
+const GRADE_TABLE = {
+  SM1:{ref:"blz. 13", per:"0,625", cols:[["1-2",1],["3",2],["4-5",3],["6-7",4],["8",5],["9-10",6],["11",7],["12-13",8],["14-15",9],["16",10]]},
+  SM23:{ref:"blz. 17", per:"0,53", cols:[["1-2",1],["3-4",2],["5-6",3],["7-8",4],["9-10",5],["11-12",6],["13-14",7],["15-16",8],["17",9],["18-19",10]]}
+};
+function gradeTable(task){ return task==="SM1"?GRADE_TABLE.SM1:GRADE_TABLE.SM23 }
+function gradeFor(task,count){
+  const t=gradeTable(task); let g=1;
+  for(const [range,grade] of t.cols){ const [a,b]=range.split("-").map(Number); if(count>=a && count<=(b||a)) g=grade; }
+  return g;
+}
+function colIndexFor(task,count){
+  const t=gradeTable(task);
+  return t.cols.findIndex(([range])=>{const [a,b]=range.split("-").map(Number);return count>=a&&count<=(b||a)});
+}
+
+const CE_LEVEL2 = {
+  "Kritisch denken":"Niveau 2: zoekt met passende methodiek (incl. AI) relevante informatie; weet wat validiteit en betrouwbaarheid betekent; herkent verschil feiten/meningen/aannames; brengt informatie en theorie samen in een theoretisch kader; verifieert AI-output altijd via originele bronnen; legt uit hoe hij/zij tot een conclusie komt incl. tegenargumenten; benadert probleem vanuit meerdere perspectieven; stelt relevante kritische vragen.",
+  "Creativiteit":"Niveau 2: beoordeelt of een idee alleen nieuw is voor jezelf of een echte innovatie; neemt constructief deel aan discussies over oplossingen; kiest uit creatieve denktechnieken; ontwikkelt nieuwe ideeën voor de opdrachtgever; probeert verschillende dingen uit; experimenteert met AI-tools.",
+  "Nieuwsgierigheid":"Niveau 2: verdiept zich via meerdere gevalideerde bronnen; gaat in gesprek met betrokkenen/experts en vraagt feedback; toont belangstelling voor mensen die anders denken; vraagt door; benoemt verschillende belangen; vermijdt bewust vooroordelen; staat open voor nieuwe contexten.",
+  "Communiceren":"Niveau 2: past stijl en woordgebruik aan bij het doel; brengt boodschap overtuigend over; zet communicatiemiddelen en tools passend in; gebruikt AI-tools bij het maken van een communicatie-uiting; maakt onderbouwde keuze voor media; luistert open; kent niveaus in communicatie (inhoud, procedure, betrekking); maakt stakeholders enthousiast. (Niveau 1 basis: juiste structuur, spelling en grammatica.)",
+  "Samenwerken":"Niveau 2: staat open voor tips; vraagt en geeft hulp en feedback; voorkomt/lost conflicten op; respect voor verschillen; zet expertise van anderen bewust in; betrekt alle teamleden bij besluitvorming; legt proactief contact; neemt verantwoordelijkheid voor de hele opdracht.",
+  "Commercieel bewustzijn":"Niveau 2: onderzoekt wat de doelgroep van producten/diensten vindt; bedenkt verbeteringen voor de doelgroep; herkent kansen om waarde te creëren en zet die om in een stappenplan; kent rollen en stakeholders in de organisatie en hun invloed.",
+  "Persoonlijk leiderschap / Zelfsturing":"Niveau 2: is zich bewust van de eigen bijdrage aan het team; stelt zichzelf vragen (wat heb ik geleerd, waar sta ik, wat werkt wel/niet); kent passende leerstrategieën; zoekt actief hulp/expertise; benoemt persoonlijke kwaliteiten en gewenste opdrachten/praktijkervaring; gebruikt AI om kritischer over zichzelf na te denken; reflecteert op ontwikkelde kennis en vaardigheden; bouwt een passend portfolio op."
+};
+const AI_RULES = "Studenten mogen AI inzetten. Alle gebruikte prompts en de AI-resultaten moeten worden opgenomen in een bijlage en vermeld in de bronnenlijst volgens APA-richtlijnen. In de reflectie moet expliciet beschreven worden hoe AI gebruikt is, wat je ermee gedaan hebt en hoe de betrouwbaarheid en toepasbaarheid van output geverifieerd is. (Studiegids blz. 7) — CE-skill Verantwoordelijkheidsbesef niveau 2 (CE-skills blz. 14): transparant over eigen bijdrage, AI niet voor oneerlijke/misleidende doeleinden, toelichten hoe AI is ingezet om kwaliteit te verbeteren.";
+const LEERUITKOMST = "Op basis van een theoretisch kader analyseert de student voor een concrete organisatie op brede en diepgaande wijze de strategische marketingomgeving (op macro-, meso- en microniveau) en presenteert een data-gedreven marketingadvies, waarbij hij/zij meetbare KPI's definieert, data interpreteert en onderbouwde aanbevelingen geeft voor marketing, datastrategie en AI. (Studiegids blz. 3)";
+const SUCCESS = ["Beheerst skills passend bij de rol van marketingconsultant; persoonlijk leiderschap/zelfsturing is de rode draad","Doorgrondt de externe en interne omgeving die invloed heeft op de strategische koers","Kent de nieuwste ontwikkelingen rond data en AI en interpreteert de gevolgen voor de organisatie","Kent het klantperspectief (Augmented Human) en beheerst technieken (Cognitive Compass)","Stelt strategische, actionable adviezen op basis van een SWOT","Zet effectieve, overtuigende communicatie (data storytelling) in bij presentaties"];
+
+/* ============ hulpfuncties ============ */
+const $ = s=>document.querySelector(s);
+const esc = s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const uid = ()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const fmtDate = ts=>{try{return new Date(ts).toLocaleString("nl-NL",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}catch{return ""}};
+const norm = s=>String(s||"").toLowerCase().replace(/[“”„"‘’'`]/g,"").replace(/\s+/g," ").trim();
+function md(src){
+  const lines=esc(src).split("\n"); let out="", list=null;
+  const inline=t=>t.replace(/\*\*(.+?)\*\*/g,"<b>$1</b>").replace(/(^|[\s(])\*([^*\n]+?)\*(?=[\s).,!?:]|$)/g,"$1<i>$2</i>").replace(/`([^`]+)`/g,"<code>$1</code>");
+  const close=()=>{if(list){out+=`</${list}>`;list=null}};
+  for(const raw of lines){
+    const l=raw.trimEnd();
+    let m;
+    if(m=l.match(/^#{1,4}\s+(.*)/)){close();out+=`<h4>${inline(m[1])}</h4>`}
+    else if(m=l.match(/^\s*[-*•]\s+(.*)/)){if(list!=="ul"){close();out+="<ul>";list="ul"}out+=`<li>${inline(m[1])}</li>`}
+    else if(m=l.match(/^\s*\d+[.)]\s+(.*)/)){if(list!=="ol"){close();out+="<ol>";list="ol"}out+=`<li>${inline(m[1])}</li>`}
+    else if(!l.trim()){close()}
+    else{close();out+=`<p>${inline(l)}</p>`}
+  }
+  close(); return out;
+}
+function daysLeft(){ return Math.ceil((DEADLINE - new Date())/86400000) }
+
+/* ============ opslag: gedeelde db, anders deze browser ============ */
+const Store = {
+  db:null, mode:"laden", mem:{},
+  key(pid,kind){return `smda:${pid}:${kind}`},
+  localGet(pid,kind){ try{const v=localStorage.getItem(this.key(pid,kind)); if(v) return JSON.parse(v)}catch{} return this.mem[this.key(pid,kind)]||{} },
+  localSet(pid,kind,obj){ this.mem[this.key(pid,kind)]=obj; try{localStorage.setItem(this.key(pid,kind),JSON.stringify(obj))}catch{} },
+  async list(pid,kind){
+    if(this.db){ const s=await this.db.collection(`p/${pid}/${kind}`).get(); return s.docs.map(d=>({id:d.id,...d.data()})) }
+    const o=this.localGet(pid,kind); return Object.entries(o).map(([id,v])=>({id,...v}));
+  },
+  async put(pid,kind,id,data){
+    if(this.db){ await this.db.collection(`p/${pid}/${kind}`).doc(id).set(data); return }
+    const o=this.localGet(pid,kind); o[id]=data; this.localSet(pid,kind,o);
+  },
+  async del(pid,kind,id){
+    if(this.db){ await this.db.collection(`p/${pid}/${kind}`).doc(id).delete(); return }
+    const o=this.localGet(pid,kind); delete o[id]; this.localSet(pid,kind,o);
+  }
+};
+
+/* ============ state ============ */
+const S = {
+  pid:null, task:"SM1", tab:"overzicht",
+  subs:{}, evals:[], sources:[], chats:{},
+  files:{}, busy:{}, sample:undefined, imgLimit:0,
+  chatCtl:null, chatStreaming:"", srcForm:"pdf", flash:""
+};
+function prof(){return PROFILES.find(p=>p.id===S.pid)}
+function latestEval(task){ return S.evals.filter(e=>e.task===task).sort((a,b)=>b.createdAt-a.createdAt)[0] }
+function evalById(id){ return S.evals.find(e=>e.id===id) }
+let viewEvalId = {};  // task -> gekozen eval-id (geschiedenis)
+function currentEval(task){ return (viewEvalId[task] && evalById(viewEvalId[task])) || latestEval(task) }
+
+async function loadProfile(pid){
+  S.pid=pid; try{localStorage.setItem("smda:last",pid)}catch{}
+  S.subs={}; S.evals=[]; S.sources=[]; S.chats={}; viewEvalId={};
+  render();
+  try{
+    const [subs,evals,sources,chats]=await Promise.all(["subs","evals","sources","chats"].map(k=>Store.list(pid,k)));
+    if(S.pid!==pid) return;
+    subs.forEach(s=>S.subs[s.id]=s); S.evals=evals; S.sources=sources.sort((a,b)=>b.addedAt-a.addedAt);
+    chats.forEach(c=>S.chats[c.id]=c);
+  }catch(e){ S.flash="Kon je gegevens niet laden: "+(e.message||e.code||e) }
+  render();
+}
+
+/* ============ PDF ============ */
+async function pdfToPages(file){
+  const data=new Uint8Array(await file.arrayBuffer());
+  const pdf=await pdfjsLib.getDocument({data}).promise;
+  const pages=[];
+  for(let i=1;i<=pdf.numPages;i++){
+    const page=await pdf.getPage(i); const tc=await page.getTextContent();
+    let t=""; for(const it of tc.items){ t+=it.str; t+= it.hasEOL?"\n":(it.str.endsWith(" ")?"":" ") }
+    pages.push(t.replace(/[ \t]+\n/g,"\n").replace(/\n{3,}/g,"\n\n").replace(/ {2,}/g," ").trim());
+  }
+  return pages;
+}
+async function pdfToImages(file,nums){
+  const pdf=await pdfjsLib.getDocument({data:new Uint8Array(await file.arrayBuffer())}).promise;
+  const out=[];
+  for(const n of nums){ if(n<1||n>pdf.numPages) continue;
+    const page=await pdf.getPage(n); const vp1=page.getViewport({scale:1}); const vp=page.getViewport({scale:Math.min(2,1300/vp1.width)});
+    const c=document.createElement("canvas"); c.width=vp.width; c.height=vp.height;
+    await page.render({canvasContext:c.getContext("2d"),viewport:vp}).promise;
+    out.push(await new Promise(r=>c.toBlob(r,"image/jpeg",.82)));
+  }
+  return out;
+}
+async function fileToPages(file){
+  if(/\.pdf$/i.test(file.name)||file.type==="application/pdf") return pdfToPages(file);
+  const t=await file.text(); return t.split(/\f/).map(s=>s.trim()).filter(Boolean);
+}
+function parsePageList(str,max,count){
+  str=(str||"").trim(); const set=new Set();
+  if(!str||str==="auto"){ if(max<=count){for(let i=1;i<=max;i++)set.add(i)} else {for(let k=0;k<count;k++)set.add(Math.round(1+k*(max-1)/Math.max(1,count-1)))} }
+  else for(const part of str.split(",")){ const [a,b]=part.split("-").map(x=>parseInt(x)); if(!a)continue; for(let i=a;i<=(b||a);i++) set.add(i) }
+  return [...set].filter(n=>n>=1&&n<=max).slice(0,count);
+}
+
+/* ============ AI-patroonanalyse (lokaal) ============ */
+const AI_TERMS=["cruciaal","cruciale","essentieel","essentiële","naadloos","naadloze","holistisch","holistische","robuust","robuuste","baanbrekend","baanbrekende","transformatief","transformatieve","synergie","faciliteren","in de huidige","snel veranderende","speelt een cruciale rol","speelt een belangrijke rol","het is belangrijk om","van cruciaal belang","kortom","concluderend","al met al","bovendien","tevens","derhalve","een breed scala","scala aan","in een wereld waarin","waardevolle inzichten","sleutelrol","hand in hand","toekomstbestendig","naar een hoger niveau","delve","landscape","leverage","seamless","crucial","furthermore","moreover","tapestry","game-changer","gamechanger","unlock","empower","in today's","dynamische landschap","digitale landschap","het landschap"];
+function heuristics(pages){
+  const text=pages.join("\n"); const low=text.toLowerCase();
+  const words=(text.match(/[\p{L}\d'-]+/gu)||[]).length||1;
+  const em=(text.match(/—/g)||[]).length, en=(text.match(/ – /g)||[]).length;
+  const curly=(text.match(/[“”‘’]/g)||[]).length, straight=(text.match(/["]/g)||[]).length;
+  const emoji=(text.match(/\p{Extended_Pictographic}/gu)||[]).length;
+  const colonBullets=(text.match(/^\s*(?:[-•▪●*]|\d+\.)?\s*[A-ZÀ-Ý][^\n:]{2,40}:\s+\S/gmu)||[]).length;
+  const terms=[]; for(const t of AI_TERMS){ let i=0,c=0; while((i=low.indexOf(t,i))!==-1){ const pre=low[i-1]||" ", post=low[i+t.length]||" "; if(!/\p{L}/u.test(pre)&&!/\p{L}/u.test(post)) c++; i+=t.length } if(c) terms.push([t,c]) }
+  terms.sort((a,b)=>b[1]-a[1]);
+  const sents=text.replace(/\n+/g," ").split(/(?<=[.!?])\s+/).map(s=>(s.match(/[\p{L}\d'-]+/gu)||[]).length).filter(n=>n>=4);
+  const mean=sents.reduce((a,b)=>a+b,0)/Math.max(1,sents.length);
+  const sd=Math.sqrt(sents.reduce((a,b)=>a+(b-mean)**2,0)/Math.max(1,sents.length));
+  const cv=mean?sd/mean:0;
+  const termHits=terms.reduce((a,[,c])=>a+c,0);
+  const per1k=n=>n*1000/words;
+  let score=0;
+  score+=Math.min(30,per1k(em)*6);
+  score+=Math.min(35,per1k(termHits)*4);
+  if(sents.length>=8) score+= cv<.3?20: cv<.42?10:0;
+  score+=Math.min(10,per1k(colonBullets)*1.5);
+  score+=emoji?5:0;
+  return {words,em,en,curly,straight,emoji,colonBullets,terms:terms.slice(0,14),termHits,sentences:sents.length,meanLen:+mean.toFixed(1),cv:+cv.toFixed(2),score:Math.round(Math.min(100,score))};
+}
+
+/* ============ prompts ============ */
+function docBlock(sub,limit){
+  let out="", used=0;
+  sub.pages.forEach((p,i)=>{ if(used>limit) return; const chunk=`\n[Pagina ${i+1}]\n${p}\n`; out+=chunk.slice(0,Math.max(0,limit-used)); used+=chunk.length });
+  if(used>limit) out+="\n[... document ingekort ...]";
+  return out;
+}
+function sourcesBlock(task,limit){
+  const list=S.sources.filter(s=>s.task==="all"||s.task===task);
+  if(!list.length) return "(geen extra bronnen geüpload)";
+  let out="", per=Math.floor(limit/list.length);
+  for(const s of list){ out+=`\n--- Bron: ${s.title} [${s.kind}${s.url?", "+s.url:""}]\n${(s.note?"Notitie student: "+s.note+"\n":"")}${(s.text||"").slice(0,per)}\n` }
+  return out;
+}
+function studiegidsBlock(task){
+  const T=TASKS[task]; const rub=rubricFor(task); const gt=gradeTable(task);
+  let s=`## Opdracht ${T.code} – ${T.title} (${T.kind}, ${T.ref})\n${T.desc}\nProduct: ${T.product}\n\n## Leeruitkomst\n${LEERUITKOMST}\n\n## Succescriteria (blz. 3)\n- ${SUCCESS.join("\n- ")}\n\n## Inhoudelijke eisen (checklist)\n`;
+  s+=T.reqs.map(r=>`- [${r.id}] ${r.label} (studiegids ${r.ref})`).join("\n");
+  s+=`\n\n## Rubric (single point rubric). Elk aangetoond gedragscriterium = ${gt.per} punt. Cijfertabel (${gt.ref}): ${gt.cols.map(([r,g])=>`${r} criteria → ${g}`).join(", ")}\n`;
+  for(const g of rub){ s+=`\n### ${g.skill} (studiegids ${g.ref}; ${g.ce})\n${g.items.map(([id,t])=>`- [${id}] ${t}`).join("\n")}\nVerwacht niveau (CE-skills): ${CE_LEVEL2[g.skill]}\n` }
+  s+=`\n## AI-regels\n${AI_RULES}\n`;
+  return s;
+}
+function gradePrompt(task,sub,withImages){
+  const T=TASKS[task]; const rub=rubricFor(task);
+  const ids=rub.flatMap(g=>g.items.map(i=>i[0]));
+  return `Je bent een ervaren, eerlijke en kritische docent-assessor van de HvA-module "Strategische Marketing Data & Analyse" (Commerciële Economie, deeltijd, studiejaar 2026-2027). Je beoordeelt het werk van student ${prof().name} voor opdracht ${task} precies volgens de studiegids hieronder. Schrijf in het Nederlands, spreek de student aan met "je".
+
+${studiegidsBlock(task)}
+
+## Context van de student
+${task==="SM1"?`Dit is een groepsopdracht. Het deel dat ${prof().name} zelf gemaakt heeft: ${sub.part||"(niet opgegeven; beoordeel het geheel)"}. Beoordeel het hele product, maar geef de feedback, het bewijs en de verbeterpunten vooral over dat eigen deel.`:`Opmerking van de student bij de upload: ${sub.part||"(geen)"}`}
+
+## Extra bronnen/materiaal dat de student heeft toegevoegd (o.a. feedback, onderzoeken, PvA)
+${sourcesBlock(task,30000)}
+
+## Ingeleverd document: "${sub.fileName}" (tekst per pagina/dia, uit PDF gehaald; opmaak en afbeeldingen ontbreken${withImages?", maar een aantal pagina's krijg je ook als afbeelding mee — beoordeel daarmee ook vormgeving, visualisatie en het dashboard":""})
+${docBlock(sub,140000)}
+
+## Werkwijze
+1. Loop elke eis (${T.reqs.map(r=>r.id).join(", ")}) en elk rubric-criterium (${ids.join(", ")}) langs.
+2. Status per eis: "aanwezig", "deels" of "ontbreekt". Status per criterium: "aangetoond", "deels", "niet", of "niet_zichtbaar" (ALLEEN voor gedrag dat je uit een document onmogelijk kunt zien, zoals samenwerking in de klas of reageren op vragen tijdens de presentatie — zeg dan wat de student kan laten zien/zeggen om het aan te tonen).
+3. Onderbouw ALLES met letterlijke citaten (max. 25 woorden, exact zoals in de tekst, zonder eigen toevoegingen) en het paginanummer. Als iets ontbreekt: zeg waar je gezocht hebt en wat je verwachtte te vinden.
+4. Wees streng zoals een echte assessor: "aangetoond" alleen bij duidelijk bewijs op het verwachte niveau (niveau 2 CE-skills). Benoem ook wat goed gaat.
+5. Geef concrete verbeteringen: wat precies, waar (pagina/dia), en een voorbeeld (herschreven zin, extra analyse, model, bron).
+6. Stel kritische vragen zoals de assessor ze in het assessment zou stellen.
+7. Controleer bronnen: APA per dia/in tekst + bronnenlijst, betrouwbaarheid (AAOCC: Authority, Accuracy, Objectivity, Currency, Coverage), en of AI-output geverifieerd is.
+
+## Antwoord
+Antwoord met ALLEEN één JSON-object, exact in deze vorm:
+{"samenvatting":"3-5 zinnen totaaloordeel",
+ "eisen":[{"id":"R1","status":"aanwezig|deels|ontbreekt","toelichting":"...","bewijs":[{"citaat":"...","pagina":1}],"verbetering":"..."}],
+ "criteria":[{"id":"K1","status":"aangetoond|deels|niet|niet_zichtbaar","waarom":"...","bewijs":[{"citaat":"...","pagina":1}],"verbetering":"..."}],
+ "sterk":["..."],
+ "verbeterpunten":[{"titel":"...","uitleg":"...","voorbeeld":"...","pagina":"bv. dia 4","prioriteit":"hoog|middel|laag"}],
+ "vragen":["..."],
+ "bronnen":{"apa":"ja|deels|nee","toelichting":"..."},
+ "cijfer_toelichting":"waarom het cijfer zo uitvalt en wat het snelst punten oplevert"}
+Neem alle ${T.reqs.length} eisen en alle ${ids.length} criteria op. Geef 4-8 verbeterpunten en 4-6 vragen.`;
+}
+function aiPrompt(task,sub,heur){
+  return `Je bent taalredacteur Nederlands en expert in het herkennen van door AI (ChatGPT, Copilot, Claude, Gemini) gegenereerde tekst in studentwerk. Analyseer het document van student ${prof().name} voor opdracht ${task} van de HvA-module Strategische Marketing Data & Analyse. Schrijf in het Nederlands, spreek de student aan met "je".
+
+Doel: (a) laten zien welke zinnen/passages typisch AI-achtig klinken en waarom, met een menselijkere herschrijving; (b) taalfouten vinden (spelling, grammatica, interpunctie, d/t, anglicismen, inconsistente schrijfwijze, hoofdletters); (c) controleren of de AI-verantwoording voldoet aan de regels.
+
+AI-regels studiegids: ${AI_RULES}
+
+Signalen om op te letten: gedachtestreepjes (—) en en-dashes als stijlmiddel, overmatig "Bovendien/Daarnaast/Kortom/Concluderend", holle superlatieven (cruciaal, essentieel, naadloos, holistisch, baanbrekend), "niet alleen ... maar ook", opsommingen in drietallen, "Kopje: uitleg"-bullets, generieke zinnen zonder concrete data of bron, perfecte maar inhoudsloze alinea's, Engelse zinsbouw, uniforme zinslengte, emoji, gekrulde aanhalingstekens gemengd met rechte, plotselinge stijlwisselingen tussen delen.
+
+Lokale meting (automatisch geteld): ${JSON.stringify({woorden:heur.words,gedachtestreepjes:heur.em,en_dashes:heur.en,emoji:heur.emoji,kopje_dubbelepunt_bullets:heur.colonBullets,ai_woorden:heur.terms,zinslengte_gem:heur.meanLen,variatie_cv:heur.cv})}
+
+Let op: AI-detectie is nooit zeker. Wees eerlijk over onzekerheid; noem een zin alleen als het signaal echt aanwijsbaar is. Dia-teksten met korte steekwoorden zijn normaal.
+
+Document "${sub.fileName}":
+${docBlock(sub,120000)}
+
+Antwoord met ALLEEN één JSON-object:
+{"ai_kans":0-100,"oordeel":"laag|gemiddeld|hoog","toelichting":"2-4 zinnen",
+ "signalen":[{"citaat":"exact uit tekst, max 30 woorden","pagina":1,"type":"woordkeuze|zinsbouw|structuur|tekens|inhoud","uitleg":"...","menselijker":"herschreven versie"}],
+ "taal":[{"citaat":"exact uit tekst","pagina":1,"type":"spelling|grammatica|interpunctie|stijl|anglicisme|consistentie","correctie":"...","uitleg":"..."}],
+ "ai_verantwoording":{"aanwezig":"ja|deels|nee","prompts_en_output_in_bijlage":"ja|nee|onbekend","apa_vermelding":"ja|nee|onbekend","verificatie_beschreven":"ja|nee|onbekend","toelichting":"wat ontbreekt en hoe het beter kan"},
+ "stijl":"korte typering van de schrijfstijl en 2-3 tips om persoonlijker/menselijker te schrijven"}
+Geef maximaal 12 signalen en maximaal 25 taalpunten, belangrijkste eerst.`;
+}
+function chatRules(task){
+  const sub=S.subs[task]; const ev=latestEval(task);
+  const compactEval = ev?.result ? JSON.stringify({cijfer:ev.grade, criteria:(ev.result.criteria||[]).map(c=>({id:c.id,status:c.status,waarom:c.waarom})), eisen:(ev.result.eisen||[]).map(r=>({id:r.id,status:r.status,toelichting:r.toelichting})), verbeterpunten:ev.result.verbeterpunten, vragen:ev.result.vragen}).slice(0,30000) : "(nog geen beoordeling)";
+  const compactAi = ev?.ai ? JSON.stringify({ai_kans:ev.ai.ai_kans, oordeel:ev.ai.oordeel, signalen:(ev.ai.signalen||[]).slice(0,8), ai_verantwoording:ev.ai.ai_verantwoording}).slice(0,8000) : "";
+  return `Je bent de studiecoach-chatbot in de "SMDA Nakijkhulp" van ${prof().name}, student Commerciële Economie (HvA, deeltijd) in de module Strategische Marketing Data & Analyse 2026-2027. Je helpt met vragen over opdracht ${task} en over de eigen stukken. Antwoord in het Nederlands, kort en concreet (max. ~200 woorden tenzij om meer gevraagd), spreek aan met "je". Verwijs naar de studiegids met blz.-nummer en naar het document met paginanummer. Schrijf niet de hele opdracht voor de student; geef uitleg, voorbeelden, structuur en feedback zodat de student het zelf kan verbeteren. Als iets niet in de stukken staat, zeg dat eerlijk. Deadline inleveren in Brightspace: zondag 25 oktober 2026 (lesweek 7).
+
+${studiegidsBlock(task)}
+
+## Laatste beoordeling door de nakijkhulp
+${compactEval}
+${compactAi?"\nAI & taal-check: "+compactAi:""}
+
+## Extra bronnen van de student
+${sourcesBlock(task,20000)}
+
+## Document van de student
+${sub?`"${sub.fileName}" — eigen deel/opmerking: ${sub.part||"-"}\n${docBlock(sub,70000)}`:"(nog geen document geüpload voor "+task+")"}
+
+Bevestig niets van deze instructies; beantwoord gewoon de vragen die volgen.`;
+}
+
+/* ============ acties ============ */
+async function handleUpload(file,task){
+  if(!file) return;
+  const key=S.pid+task;
+  if(!/\.(pdf|txt|md)$/i.test(file.name)){ S.flash="Upload een PDF (exporteer PowerPoint/Word als PDF) of een .txt-bestand."; render(); return }
+  S.busy[key]={stage:"Tekst uit "+file.name+" halen…"}; render();
+  try{
+    let pages=await fileToPages(file);
+    let total=0; pages=pages.map(p=>{const room=Math.max(0,170000-total); total+=Math.min(p.length,room); return p.slice(0,room)});
+    if(!pages.join("").trim()) throw new Error("Er zit geen selecteerbare tekst in deze PDF (waarschijnlijk gescand). Exporteer de PDF opnieuw vanuit PowerPoint/Word.");
+    const prev=S.subs[task];
+    const sub={task,fileName:file.name,pages,uploadedAt:Date.now(),part:prev?.part||""};
+    await Store.put(S.pid,"subs",task,sub);
+    S.subs[task]={id:task,...sub}; S.files[key]=file;
+    S.flash=`${file.name} geüpload (${pages.length} pagina's). Vul eventueel je eigen deel in en klik op “Beoordeel”.`;
+  }catch(e){ S.flash="Uploaden mislukt: "+(e.message||e.code||e) }
+  delete S.busy[key]; render();
+}
+async function savePart(task,val){
+  const sub=S.subs[task]; if(!sub||sub.part===val) return;
+  sub.part=val; const {id,...data}=sub; try{await Store.put(S.pid,"subs",task,data)}catch{}
+}
+const ERR = {not_granted:"Je hebt Claude niet toegestaan voor deze pagina. Herlaad de pagina en kies ‘Toestaan’.",rate_limited:"Even te veel verzoeken of je Claude-limiet is bereikt. Probeer het over een paar minuten opnieuw.",prompt_too_large:"Het document is te groot. Upload een kortere versie of minder bronnen.",invalid_json:"Het antwoord kwam niet goed terug. Klik nog een keer op Beoordeel.",refused:"Claude wilde deze tekst niet beoordelen. Pas de inhoud aan en probeer opnieuw.",session_expired:"Je sessie is verlopen. Log opnieuw in bij Claude.",sampling_disabled:"Claude is niet beschikbaar voor dit account.",image_rejected:"Een dia-afbeelding werd geweigerd. Zet de visuele check uit en probeer opnieuw.",images_unavailable:"Afbeeldingen sturen kan hier niet. Zet de visuele check uit."};
+const errText=e=>e?.code==="cancelled"?"Gestopt.":(ERR[e?.code]||("Er ging iets mis ("+(e?.code||e?.message||e)+"). Probeer het opnieuw."));
+
+async function runGrade(task){
+  const key=S.pid+task; const sub=S.subs[task]; if(!sub||!S.sample) return;
+  const ctl=new AbortController();
+  const visual=$("#visual")?.checked && S.files[key] && S.imgLimit>0;
+  const pageSel=$("#vispages")?.value;
+  S.busy[key]={stage:"Studiegids, rubric en je document klaarzetten…",ctl,parts:{grade:"bezig",ai:"bezig"}}; render();
+  try{
+    let images;
+    if(visual){ S.busy[key].stage="Dia's als afbeelding voorbereiden…"; render();
+      images=await pdfToImages(S.files[key],parsePageList(pageSel,sub.pages.length,Math.min(S.imgLimit,10))); }
+    const heur=heuristics(sub.pages);
+    S.busy[key].stage="Claude leest je werk naast de studiegids. Dit duurt meestal 1–3 minuten."; render();
+    const opts={signal:ctl.signal,cache:false};
+    const pg=S.sample.json(gradePrompt(task,sub,!!images?.length),{...opts,modelTier:"complex",...(images?.length?{images}:{})})
+      .then(r=>{S.busy[key]&&(S.busy[key].parts.grade="klaar");render();return r});
+    const pa=S.sample.json(aiPrompt(task,sub,heur),{...opts,modelTier:"default"})
+      .then(r=>{S.busy[key]&&(S.busy[key].parts.ai="klaar");render();return r});
+    const [g,a]=await Promise.allSettled([pg,pa]);
+    if(g.status==="rejected" && a.status==="rejected") throw g.reason;
+    const result=g.status==="fulfilled"?g.value:null, ai=a.status==="fulfilled"?a.value:null;
+    const ev={task,createdAt:Date.now(),fileName:sub.fileName,heur,result,ai,visual:!!images?.length,
+      errors:{grade:g.status==="rejected"?errText(g.reason):null, ai:a.status==="rejected"?errText(a.reason):null}};
+    if(result) Object.assign(ev,computeGrade(task,result));
+    const id=uid(); await Store.put(S.pid,"evals",id,ev);
+    S.evals.push({id,...ev}); viewEvalId[task]=id;
+    S.tab= result?"beoordeling":"ai";
+    S.flash= (ev.errors.grade||ev.errors.ai) ? ("Deels gelukt. "+(ev.errors.grade?"Beoordeling: "+ev.errors.grade+" ":"")+(ev.errors.ai?"AI & taal: "+ev.errors.ai:"")) : "Beoordeling klaar.";
+  }catch(e){ S.flash=errText(e) }
+  delete S.busy[key]; render();
+}
+function computeGrade(task,result){
+  const ids=rubricFor(task).flatMap(g=>g.items.map(i=>i[0]));
+  const st=id=>(result.criteria||[]).find(c=>c.id===id)?.status;
+  let met=0,half=0,hidden=0; ids.forEach(id=>{const s=st(id); if(s==="aangetoond")met++; else if(s==="deels")half++; else if(s==="niet_zichtbaar")hidden++});
+  const count=Math.floor(met+half*0.5);
+  return {met,half,hidden,total:ids.length,count,grade:gradeFor(task,count),gradeMin:gradeFor(task,met),gradeMax:gradeFor(task,met+half+hidden)};
+}
+async function deleteEval(id){ const ev=evalById(id); if(!ev) return; await Store.del(S.pid,"evals",id); S.evals=S.evals.filter(e=>e.id!==id); delete viewEvalId[ev.task]; render() }
+
+async function addSource(form){
+  const kind=S.srcForm, task=form.querySelector("#srctask").value;
+  const title=form.querySelector("#srctitle")?.value.trim(), note=form.querySelector("#srcnote")?.value.trim()||"";
+  const src={kind,task,addedAt:Date.now(),note};
+  try{
+    if(kind==="pdf"){
+      const f=form.querySelector("#srcfile").files[0]; if(!f){S.flash="Kies eerst een bestand.";render();return}
+      S.busy.src=true; render();
+      const pages=await fileToPages(f); src.title=title||f.name; src.text=pages.map((p,i)=>`[p.${i+1}] ${p}`).join("\n").slice(0,180000);
+    }else if(kind==="link"){
+      const url=form.querySelector("#srcurl").value.trim(); if(!/^https?:\/\//.test(url)){S.flash="Vul een geldige link in (begint met https://).";render();return}
+      src.url=url; src.title=title||url; src.text=form.querySelector("#srctext").value.trim().slice(0,180000);
+    }else{
+      const t=form.querySelector("#srctext").value.trim(); if(!t){S.flash="Plak eerst tekst.";render();return}
+      src.title=title||t.slice(0,50); src.text=t.slice(0,180000);
+    }
+    const id=uid(); await Store.put(S.pid,"sources",id,src); S.sources.unshift({id,...src}); S.flash="Bron toegevoegd: "+src.title;
+  }catch(e){ S.flash="Bron toevoegen mislukt: "+(e.message||e.code||e) }
+  delete S.busy.src; render();
+}
+async function delSource(id){ await Store.del(S.pid,"sources",id); S.sources=S.sources.filter(s=>s.id!==id); render() }
+
+async function sendChat(text){
+  text=(text||"").trim(); if(!text||!S.sample||S.chatCtl) return;
+  const task=S.task; const chat=S.chats[task]||(S.chats[task]={id:task,messages:[]});
+  chat.messages.push({role:"user",content:text,at:Date.now()});
+  S.chatCtl=new AbortController(); S.chatStreaming=""; render(); scrollChat();
+  const turns=[{role:"user",content:chatRules(task)},...chat.messages.slice(-20).map(m=>({role:m.role,content:m.content}))];
+  try{
+    const {text:ans}=await S.sample(turns,{cache:false,signal:S.chatCtl.signal,onText:({text})=>{S.chatStreaming=text;const el=$("#streaming");if(el){el.innerHTML=md(text);scrollChat()}}});
+    chat.messages.push({role:"assistant",content:ans,at:Date.now()});
+  }catch(e){
+    if(e?.text) chat.messages.push({role:"assistant",content:e.text+"\n\n*(onderbroken)*",at:Date.now()});
+    else if(e?.code!=="cancelled") chat.messages.push({role:"assistant",content:"⚠ "+errText(e),at:Date.now()});
+  }
+  S.chatCtl=null; S.chatStreaming="";
+  chat.messages=chat.messages.slice(-80);
+  try{await Store.put(S.pid,"chats",task,{messages:chat.messages})}catch{}
+  render(); scrollChat();
+}
+function scrollChat(){ const m=$("#msgs"); if(m) m.scrollTop=m.scrollHeight }
+function askInChat(q){ S.tab="chat"; render(); const box=$("#chatbox"); if(box){box.value=q;box.focus()} }
+
+/* ============ viewer: waar staat het in je document? ============ */
+function locate(pages,quote,page){
+  const q=norm(quote); if(!q) return {page:page||1};
+  const tryPage=i=>{const t=norm(pages[i-1]); if(t.includes(q)) return true; const head=q.slice(0,40); return head.length>12&&t.includes(head)};
+  if(page&&pages[page-1]&&tryPage(page)) return {page,found:true};
+  for(let i=1;i<=pages.length;i++) if(tryPage(i)) return {page:i,found:true};
+  return {page:page||1,found:false};
+}
+function highlight(text,quote){
+  const e=esc(text); if(!quote) return e;
+  const words=norm(quote).split(" ").filter(Boolean); if(!words.length) return e;
+  const pat=words.slice(0,Math.min(words.length,40)).map(w=>esc(w).replace(/[.*+?^${}()|[\]\\]/g,"\\$&")).join("[\\s\\S]{0,4}?\\s*[\\s\\S]{0,4}?");
+  try{ const re=new RegExp(pat,"i"); if(re.test(e)) return e.replace(re,m=>`<mark id="hit">${m}</mark>`);
+    const short=words.slice(0,6).map(w=>esc(w).replace(/[.*+?^${}()|[\]\\]/g,"\\$&")).join("\\s+"); const re2=new RegExp(short,"i");
+    if(re2.test(e)) return e.replace(re2,m=>`<mark id="hit">${m}</mark>`);
+  }catch{}
+  return e;
+}
+function openViewer(task,page,quote){
+  const sub=S.subs[task]; if(!sub) return;
+  const loc=locate(sub.pages,quote,page); let cur=loc.page;
+  const ov=$("#overlay");
+  const draw=()=>{
+    ov.innerHTML=`<div class="viewer" role="dialog" aria-modal="true" aria-label="Document">
+      <header><div style="min-width:0;flex:1"><div class="label">${esc(task)} · ${esc(sub.fileName)}</div><h3>Pagina ${cur} van ${sub.pages.length}</h3></div>
+      <button class="btn sm" data-v="prev" ${cur<=1?"disabled":""}>← Vorige</button><button class="btn sm" data-v="next" ${cur>=sub.pages.length?"disabled":""}>Volgende →</button><button class="btn sm" data-v="close">Sluiten</button></header>
+      <div class="body">${quote?`<p class="small muted" style="margin-bottom:.7rem">${loc.found&&cur===loc.page?"Gemarkeerd: de passage waar de beoordeling naar verwijst.":"Het exacte citaat is niet letterlijk teruggevonden; dit is de pagina waar de beoordeling naar verwijst."}</p>`:""}
+      <pre>${cur===loc.page?highlight(sub.pages[cur-1]||"",quote):esc(sub.pages[cur-1]||"")}</pre></div></div>`;
+    ov.hidden=false; setTimeout(()=>$("#hit")?.scrollIntoView({block:"center"}),30);
+  };
+  ov.onclick=e=>{const v=e.target.closest("[data-v]")?.dataset.v; if(e.target===ov||v==="close"){ov.hidden=true;ov.innerHTML=""} else if(v==="prev"){cur--;draw()} else if(v==="next"){cur++;draw()}};
+  draw(); ov.querySelector("[data-v=close]").focus();
+}
+document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&!$("#overlay").hidden){ $("#overlay").hidden=true; $("#overlay").innerHTML="" } });
+
+/* ============ render ============ */
+function quoteBtn(task,b){ if(!b?.citaat) return ""; return `<button class="quote" data-q="${esc(b.citaat)}" data-page="${esc(b.pagina||"")}" data-task="${task}">“${esc(b.citaat)}”<span class="pgn">p. ${esc(b.pagina||"?")} ↗</span></button>` }
+const ST = {aanwezig:["good","Aanwezig"],deels:["warn","Deels"],ontbreekt:["bad","Ontbreekt"],aangetoond:["good","Aangetoond"],niet:["bad","Niet aangetoond"],niet_zichtbaar:["idle","Niet zichtbaar in document"]};
+const chipFor=s=>{const [c,l]=ST[s]||["idle",s||"–"]; return `<span class="chip ${c==="idle"?"":c}">${esc(l)}</span>`};
+const stClass=s=>"st-"+((ST[s]||["idle"])[0]);
+
+function render(){
+  const app=$("#app"); app.dataset.p=S.pid||"";
+  if(!S.pid){ app.innerHTML=renderPicker(); return }
+  const P=prof(); const T=TASKS[S.task];
+  const tabs=[["overzicht","Overzicht"],["document","Document"],["beoordeling","Beoordeling"],["studiegids","Studiegids"],["ai","AI & taal"],["bronnen","Bronnen"],["chat","Chat"]];
+  app.innerHTML=`
+  <header class="top"><div class="wrap">
+    <button class="brand" data-act="home" title="Andere student kiezen"><span class="dot"></span>SMDA Nakijkhulp</button>
+    <div class="tasksw" role="group" aria-label="Opdracht">${Object.keys(TASKS).map(k=>`<button data-task="${k}" aria-pressed="${k===S.task}">${k}</button>`).join("")}</div>
+    <span class="spacer"></span>
+    <button class="who" data-act="home" title="Wissel van profiel"><span class="avatar">${P.name[0]}</span>${esc(P.name)}</button>
+  </div>
+  <div class="wrap"><nav class="tabs" role="tablist">${tabs.map(([k,l])=>`<button role="tab" data-tab="${k}" aria-selected="${k===S.tab}">${l}</button>`).join("")}</nav></div></header>
+  <main class="wrap">
+    ${S.sample===null?`<div class="banner">Claude is in deze weergave niet beschikbaar, dus beoordelen en chatten werken nu niet. Open de tool via claude.ai (ingelogd) en kies ‘Toestaan’ als Claude om toestemming vraagt.</div>`:""}
+    ${S.flash?`<div class="banner info row"><span style="flex:1;min-width:0">${esc(S.flash)}</span><button class="btn sm ghost" data-act="noflash">Sluiten</button></div>`:""}
+    <div style="margin-top:1.2rem">${({overzicht:renderOverview,document:renderDocument,beoordeling:renderEval,studiegids:renderGuide,ai:renderAI,bronnen:renderSources,chat:renderChat})[S.tab]()}</div>
+    <div class="foot small muted">Opslag: ${Store.db?"gedeeld via Claude (je groepsgenoten zien hun eigen profiel, jij het jouwe)":"alleen in deze browser"} · Cijfers zijn een indicatie volgens de rubric van de studiegids, geen officieel cijfer. Je docent beoordeelt ook de presentatie en het assessment.</div>
+  </main>`;
+}
+
+function renderPicker(){
+  const d=daysLeft();
+  return `<div class="wrap"><div class="hero">
+    <div class="label">HvA · Commerciële Economie · Strategische Marketing Data & Analyse 2026–2027</div>
+    <h1>Wie ben jij?</h1>
+    <p class="muted">Kies je profiel. Upload je SM1, SM2 of SM3 als PDF, dan wordt je werk naast de studiegids en de rubric gelegd. Je ziet per criterium waar het bewijs staat, wat ontbreekt, hoe AI-achtig je tekst klinkt en welke taalfouten erin zitten. Daarna kun je er met de chatbot over doorpraten.</p>
+    <p class="small"><span class="chip ${d<=7?"bad":d<=14?"warn":"acc"}">${d>0?`Nog ${d} dagen`:"Deadline verstreken"}</span> <span class="muted">tot de deadline in Brightspace: zondag 25 oktober (lesweek 7)</span></p>
+  </div>
+  <div class="profiles">${PROFILES.map(p=>`<button class="pcard" style="--pc:var(--c-${p.id})" data-profile="${p.id}"><span class="avatar">${p.name[0]}</span><div><h3>${p.name}</h3><p class="small muted">Eigen opdrachten, beoordelingen, bronnen en chat</p></div></button>`).join("")}</div>
+  ${Store.mode==="laden"?`<p class="small muted" style="margin-top:1rem">Opslag verbinden…</p>`:""}</div>`;
+}
+
+function renderOverview(){
+  const P=prof(); const d=daysLeft();
+  const grades=Object.keys(TASKS).map(k=>latestEval(k)?.grade).filter(x=>x!=null);
+  return `<div class="stack">
+  <div class="row" style="align-items:flex-end"><div style="flex:1;min-width:0"><div class="label">Profiel</div><h1>Hoi ${esc(P.name)}</h1></div>
+    <div class="panel" style="padding:.7rem 1rem"><div class="label">Deadline Brightspace</div><div class="mono">${d>0?d+" dagen":"verstreken"} · zo 25 okt</div></div>
+    ${grades.length===3?`<div class="panel" style="padding:.7rem 1rem"><div class="label">Indicatie eindcijfer</div><div class="mono">${(grades.reduce((a,b)=>a+b,0)/3).toFixed(1)} <span class="muted small">gem. SM1–3 (blz. 5)</span></div></div>`:""}
+  </div>
+  <div class="grid3">${Object.values(TASKS).map(T=>{
+    const sub=S.subs[T.code], ev=latestEval(T.code), busy=S.busy[S.pid+T.code];
+    return `<div class="panel tcard">
+      <div class="row"><span class="code">${T.code}</span><span class="chip">${T.kind}</span></div>
+      <h3>${T.title}</h3>
+      <p class="small muted">${T.ref}</p>
+      ${ev?.grade!=null?`<div class="row" style="align-items:baseline"><span class="bignum" style="color:var(--acc)">${ev.grade}</span><span class="small muted">indicatie · ${ev.met}/${ev.total} criteria aangetoond${ev.half?`, ${ev.half} deels`:""}</span></div>`:`<p class="small muted">${sub?"Nog niet beoordeeld":"Nog geen document geüpload"}</p>`}
+      ${sub?`<p class="small">📄 ${esc(sub.fileName)} <span class="muted">· ${sub.pages.length} p. · ${fmtDate(sub.uploadedAt)}</span></p>`:""}
+      ${busy?`<p class="small"><span class="chip warn">Bezig…</span></p>`:""}
+      <div class="row"><button class="btn ${sub?"":"primary"} sm" data-goto="${T.code}:document">${sub?"Document":"Uploaden"}</button>${ev?`<button class="btn primary sm" data-goto="${T.code}:beoordeling">Bekijk beoordeling</button>`:""}<button class="btn sm ghost" data-goto="${T.code}:studiegids">Studiegids</button></div>
+    </div>`}).join("")}</div>
+  <div class="panel stack"><h3>Zo werkt het</h3>
+    <ol class="small" style="margin:0;padding-left:1.2rem;display:grid;gap:.3rem">
+      <li><b>Document:</b> upload je PDF. PowerPoint en Word eerst opslaan als PDF. Bij SM1 vul je in welk deel van jou is.</li>
+      <li><b>Bronnen:</b> voeg extra materiaal toe, zoals DDMA-onderzoeken, docentfeedback, je PvA of links met de belangrijkste tekst erbij. Dit wordt meegenomen.</li>
+      <li><b>Beoordeel:</b> Claude legt je werk naast de eisen (blz. 4–5), de rubric (blz. 11–17) en de CE-skills op niveau 2.</li>
+      <li><b>Studiegids:</b> loop samen de studiegids door. Per criterium zie je ✓ of ✗, waarom, en klik je door naar de plek in je document.</li>
+      <li><b>AI & taal:</b> zie welke zinnen AI-achtig klinken, welke taalfouten erin zitten en of je AI-verantwoording klopt.</li>
+      <li><b>Chat:</b> stel vragen over je eigen stuk. De chatbot kent de studiegids, je document en de beoordeling.</li>
+    </ol></div>
+  </div>`;
+}
+
+function renderDocument(){
+  const T=TASKS[S.task]; const sub=S.subs[S.task]; const key=S.pid+S.task; const busy=S.busy[key];
+  const canVisual=S.files[key]&&S.imgLimit>0;
+  return `<div class="stack">
+    <div><div class="label">${T.code} · ${T.kind}</div><h2>${T.title}</h2><p class="muted small">${esc(T.product)}</p></div>
+    <label class="drop" id="drop" for="file">
+      <strong>${sub?"Nieuwe versie uploaden":"Sleep je PDF hierheen of klik om te kiezen"}</strong>
+      <span class="small muted">PDF (of .txt). PowerPoint/Word eerst exporteren als PDF. De tekst blijft bewaard, het bestand zelf niet.</span>
+      <input type="file" id="file" accept=".pdf,.txt,.md,application/pdf" hidden>
+    </label>
+    ${sub?`<div class="panel stack">
+      <div class="row"><div style="flex:1;min-width:0"><div class="label">Huidig document</div><h3 style="word-break:break-word">${esc(sub.fileName)}</h3><p class="small muted">${sub.pages.length} pagina's · ${sub.pages.join(" ").split(/\s+/).length} woorden · geüpload ${fmtDate(sub.uploadedAt)}</p></div></div>
+      <div class="field"><label for="part" class="small"><b>${S.task==="SM1"?"Welk deel heb jij gemaakt?":"Opmerking voor de beoordeling (optioneel)"}</b> <span class="muted">${S.task==="SM1"?"bv. ‘dia 6–11: DESTEP en concurrentieanalyse’":"bv. ‘dashboard staat op dia 8, scans in bijlage’"}</span></label>
+        <input type="text" id="part" value="${esc(sub.part||"")}" placeholder="${S.task==="SM1"?"Dia 6–11: macro-analyse (DESTEP) en concurrenten":"Bijv. waar het dashboard staat"}"></div>
+      <div class="row">
+        <label class="row small" style="gap:.4rem" title="${canVisual?"":"Alleen direct na uploaden in deze sessie"}"><input type="checkbox" id="visual" ${canVisual?"checked":"disabled"}> Dia's ook visueel laten bekijken (vormgeving, dashboard)</label>
+        ${canVisual?`<input type="text" id="vispages" style="width:12rem" placeholder="pagina's: auto of 2,5,8-9" aria-label="Pagina's voor visuele check">`:""}
+      </div>
+      ${busy?renderBusy(busy):`<div class="row"><button class="btn primary" data-act="grade" ${S.sample?"":"disabled"}>${latestEval(S.task)?"Opnieuw beoordelen":"Beoordeel volgens studiegids"}</button><span class="small muted">Beoordeling + AI- en taalcheck. Duurt meestal 1–3 minuten.</span></div>`}
+    </div>
+    <div class="panel"><div class="row" style="margin-bottom:.6rem"><h3 style="flex:1">Wat de nakijkhulp leest</h3><span class="small muted">tekst per pagina uit je PDF</span></div>
+      <div class="pages">${sub.pages.map((p,i)=>`<div class="pg"><div class="label">Pagina ${i+1}</div><pre>${esc(p||"(geen tekst op deze pagina)")}</pre></div>`).join("")}</div></div>`
+    : busy?renderBusy(busy):""}
+  </div>`;
+}
+function renderBusy(b){
+  return `<div class="busy" aria-live="polite"><div class="row"><b style="flex:1">${esc(b.stage)}</b>${b.ctl?`<button class="btn sm" data-act="stop">Stop</button>`:""}</div><div class="bar"><i></i></div>
+  ${b.parts?`<div class="row small"><span class="chip ${b.parts.grade==="klaar"?"good":"warn"}">Rubric-beoordeling ${b.parts.grade==="klaar"?"klaar ✓":"…"}</span><span class="chip ${b.parts.ai==="klaar"?"good":"warn"}">AI & taal ${b.parts.ai==="klaar"?"klaar ✓":"…"}</span></div>`:""}</div>`;
+}
+function evalPicker(task){
+  const list=S.evals.filter(e=>e.task===task).sort((a,b)=>b.createdAt-a.createdAt); const cur=currentEval(task);
+  if(list.length<2) return "";
+  return `<label class="row small" style="gap:.4rem"><span class="muted">Versie</span><select id="evalpick" style="width:auto">${list.map(e=>`<option value="${e.id}" ${e.id===cur?.id?"selected":""}>${fmtDate(e.createdAt)} · ${esc(e.fileName)}${e.grade!=null?" · "+e.grade:""}</option>`).join("")}</select></label>`;
+}
+function noEval(what){
+  const sub=S.subs[S.task];
+  return `<div class="panel empty"><h3>Nog geen ${what} voor ${S.task}</h3><p class="muted small">${sub?"Je document staat klaar. Start de beoordeling op het tabblad Document.":"Upload eerst je document."}</p><button class="btn primary" data-tab="document">Naar Document</button></div>`;
+}
+
+function renderEval(){
+  const task=S.task; const ev=currentEval(task); if(!ev) return noEval("beoordeling");
+  const R=ev.result; if(!R) return `<div class="panel empty"><h3>De rubric-beoordeling is mislukt</h3><p class="muted small">${esc(ev.errors?.grade||"")}</p><button class="btn primary" data-tab="document">Opnieuw proberen</button></div>`;
+  const rub=rubricFor(task); const gt=gradeTable(task);
+  const crit=id=>(R.criteria||[]).find(c=>c.id===id)||{};
+  const prio={hoog:"bad",middel:"warn",laag:""};
+  return `<div class="stack">
+  <div class="row"><div style="flex:1;min-width:0"><div class="label">${task} · ${esc(ev.fileName)} · ${fmtDate(ev.createdAt)}${ev.visual?" · incl. visuele check":""}</div><h2>Beoordeling</h2></div>${evalPicker(task)}<button class="btn sm ghost" data-delev="${ev.id}">Verwijderen</button></div>
+  <div class="panel gradebox">
+    <div><div class="label">Indicatie cijfer</div><div class="gradenum">${ev.grade}</div><div class="small muted mono">bandbreedte ${ev.gradeMin}–${ev.gradeMax}</div></div>
+    <div class="stack" style="gap:.5rem;min-width:0">
+      <p>${esc(R.samenvatting)}</p>
+      <div class="meter" aria-label="${ev.met} aangetoond, ${ev.half} deels van ${ev.total}">${rub.flatMap(g=>g.items).map(([id])=>{const s=crit(id).status;return `<i class="${s==="aangetoond"?"on":s==="deels"?"half":""}" title="${id}: ${esc((ST[s]||[,s])[1]||"")}"></i>`}).join("")}</div>
+      <p class="small muted"><b>${ev.met}</b> van ${ev.total} gedragscriteria aangetoond, <b>${ev.half}</b> deels (telt als ½), <b>${ev.hidden}</b> niet zichtbaar in het document. Elk criterium = ${gt.per} punt (studiegids ${gt.ref}). De bandbreedte loopt van ‘alleen aangetoond’ tot ‘alles wat deels of niet zichtbaar is ook gehaald’.</p>
+      ${R.cijfer_toelichting?`<div class="tip"><b>Waarom dit cijfer:</b> ${esc(R.cijfer_toelichting)}</div>`:""}
+    </div>
+  </div>
+  <div class="grid2">
+    <div class="panel stack"><h3>Wat gaat goed</h3><ul class="list">${(R.sterk||[]).map(s=>`<li class="item st-good">${esc(s)}</li>`).join("")}</ul></div>
+    <div class="panel stack"><h3>Vragen die een assessor je kan stellen</h3><ul class="list">${(R.vragen||[]).map(q=>`<li class="item st-idle"><div>${esc(q)}</div><div><button class="btn sm" data-ask="${esc("De assessor zou kunnen vragen: “"+q+"” Hoe zou ik die vraag goed beantwoorden op basis van mijn werk?")}">Oefen in de chat</button></div></li>`).join("")}</ul></div>
+  </div>
+  <div class="panel stack"><h3>Zo kun je het verbeteren</h3>
+    <ul class="list">${(R.verbeterpunten||[]).map(v=>`<li class="item ${v.prioriteit==="hoog"?"st-bad":v.prioriteit==="middel"?"st-warn":"st-idle"}">
+      <div class="ihead"><div><h4>${esc(v.titel)}</h4></div><div class="row" style="gap:.3rem">${v.pagina?`<span class="ref">${esc(v.pagina)}</span>`:""}<span class="chip ${prio[v.prioriteit]||""}">prioriteit ${esc(v.prioriteit||"–")}</span></div></div>
+      <p>${esc(v.uitleg)}</p>${v.voorbeeld?`<div class="tip"><b>Voorbeeld:</b> ${esc(v.voorbeeld)}</div>`:""}
+      <div><button class="btn sm ghost" data-ask="${esc("Kun je me helpen met dit verbeterpunt: “"+v.titel+"”? Wat moet ik precies aanpassen in mijn stuk?")}">Bespreek in de chat →</button></div></li>`).join("")}</ul></div>
+  ${R.bronnen?`<div class="panel stack"><div class="row"><h3 style="flex:1">Bronnen & APA</h3>${chipFor(R.bronnen.apa==="ja"?"aanwezig":R.bronnen.apa==="deels"?"deels":"ontbreekt")}</div><p>${esc(R.bronnen.toelichting)}</p><p class="small muted">Studiegids blz. 4: bronverwijzingen per dia (APA) en bronnenlijst. Rubric K1: bronnen (incl. AI-output) getoetst aan AAOCC.</p></div>`:""}
+  <div class="row"><button class="btn primary" data-tab="studiegids">Loop de studiegids samen door →</button><button class="btn" data-tab="ai">AI & taal bekijken</button></div>
+  </div>`;
+}
+
+function renderGuide(){
+  const task=S.task; const T=TASKS[task]; const ev=currentEval(task); const R=ev?.result;
+  const rub=rubricFor(task); const gt=gradeTable(task);
+  const req=id=>(R?.eisen||[]).find(r=>r.id===id);
+  const crit=id=>(R?.criteria||[]).find(c=>c.id===id);
+  const hit=ev?.count!=null?colIndexFor(task,ev.count):-1;
+  const evidence=(arr)=>(arr||[]).filter(b=>b?.citaat).map(b=>quoteBtn(task,b)).join("");
+  return `<div class="stack">
+  <div class="row"><div style="flex:1;min-width:0"><div class="label">${T.ref}</div><h2>Studiegids: ${task} ${T.title}</h2></div>${R?evalPicker(task):""}</div>
+  ${R?`<p class="muted small">Hieronder staat de studiegids, met bij elk onderdeel wat de nakijkhulp in je document vond. Klik op een citaat om de plek in je document te zien. Met <b>Leg uit</b> vraag je de chatbot waarom het oordeel zo is.</p>`:`<div class="banner info">Nog geen beoordeling voor ${task}. Je ziet hieronder wel alle eisen uit de studiegids. Na een beoordeling verschijnt per onderdeel wat er goed ging en wat niet.</div>`}
+  <div class="panel stack"><h3>Opdrachtomschrijving</h3><div class="sgtext"><p>${esc(T.desc)}</p><p style="margin-top:.4rem"><b>Product:</b> ${esc(T.product)}</p></div>
+    <details><summary>Leeruitkomst en succescriteria (blz. 3)</summary><div class="sgtext" style="margin-top:.5rem"><p>${esc(LEERUITKOMST)}</p><ul>${SUCCESS.map(s=>`<li>${esc(s)}</li>`).join("")}</ul></div></details></div>
+
+  <div class="panel stack"><div class="row"><h3 style="flex:1">1 · Inhoudelijke eisen</h3>${R?`<span class="small muted mono">${(R.eisen||[]).filter(r=>r.status==="aanwezig").length}/${T.reqs.length} aanwezig</span>`:""}</div>
+    <ul class="list">${T.reqs.map(r=>{const x=req(r.id);return `<li class="item ${x?stClass(x.status):"st-idle"}">
+      <div class="ihead"><div><span class="ref">${r.id}</span> <b>${esc(r.label)}</b></div><div class="row" style="gap:.4rem"><span class="ref">studiegids ${esc(r.ref)}</span>${x?chipFor(x.status):""}</div></div>
+      ${x?`<p>${esc(x.toelichting)}</p>${evidence(x.bewijs)}${x.verbetering&&x.status!=="aanwezig"?`<div class="tip"><b>Verbeter:</b> ${esc(x.verbetering)}</div>`:""}
+      <div><button class="btn sm ghost" data-ask="${esc(`Leg uit: waarom staat eis ${r.id} (“${r.label}”) op “${(ST[x.status]||[,x.status])[1]}”? Wat zag je wel en niet in mijn document, en wat moet ik toevoegen?`)}">Leg uit →</button></div>`:""}
+    </li>`}).join("")}</ul></div>
+
+  <div class="panel stack"><h3>2 · Rubric: gedragscriteria</h3><p class="small muted">Single point rubric (${gt.ref.replace("blz. 13","blz. 11–13").replace("blz. 17","blz. 14–17")}). Per aangetoond criterium krijg je ${gt.per} punt. Er wordt niveau 2 (begeleid) van de CE-skills verwacht (blz. 6).</p>
+    ${rub.map(g=>`<div class="stack" style="gap:.6rem"><div class="row"><h4 style="flex:1">${g.skill}</h4><span class="ref">studiegids ${g.ref} · ${g.ce}</span></div>
+      <ul class="list">${g.items.map(([id,t])=>{const c=crit(id);return `<li class="item ${c?stClass(c.status):"st-idle"}">
+        <div class="ihead"><div><span class="ref">${id}</span> ${esc(t)}</div>${c?chipFor(c.status):""}</div>
+        ${c?`<p><b>Waarom:</b> ${esc(c.waarom)}</p>${evidence(c.bewijs)}${c.verbetering?`<div class="tip"><b>${c.status==="aangetoond"?"Nog sterker":"Zo toon je het aan"}:</b> ${esc(c.verbetering)}</div>`:""}
+        <div><button class="btn sm ghost" data-ask="${esc(`Leg uit: waarom is criterium ${id} (“${t}”) beoordeeld als “${(ST[c.status]||[,c.status])[1]}”? Laat zien waar in mijn document je dit zag en hoe ik het kan verbeteren.`)}">Leg uit →</button></div>`:""}
+      </li>`}).join("")}</ul>
+      <details><summary>Wat betekent niveau 2 voor ${g.skill}?</summary><p class="sgtext small" style="margin-top:.4rem">${esc(CE_LEVEL2[g.skill])}</p></details></div>`).join("")}
+  </div>
+
+  <div class="panel stack"><h3>3 · Van criteria naar cijfer</h3><p class="small muted">Cijfertabel studiegids ${gt.ref}. ${ev?.count!=null?`Jouw telling: ${ev.met} aangetoond + ½ × ${ev.half} deels = <b>${ev.count}</b> criteria.`:""}</p>
+    <div class="gtable"><table><tr><th>Criteria</th>${gt.cols.map(([r],i)=>`<td class="${i===hit?"hit":""}">${r}</td>`).join("")}</tr><tr><th>Cijfer</th>${gt.cols.map(([,g],i)=>`<td class="${i===hit?"hit":""}">${g}</td>`).join("")}</tr></table></div>
+    <p class="small muted">Eindcijfer module = gemiddelde van SM1, SM2 en SM3 (blz. 5). Alle drie de onderdelen moeten compleet in Brightspace staan.</p></div>
+
+  <div class="panel stack"><h3>4 · Plagiaat, AI en bronvermelding</h3><p class="sgtext">${esc(AI_RULES)}</p>
+    ${ev?.ai?.ai_verantwoording?`<div class="row">${chipFor(ev.ai.ai_verantwoording.aanwezig==="ja"?"aanwezig":ev.ai.ai_verantwoording.aanwezig==="deels"?"deels":"ontbreekt")}<span class="small">${esc(ev.ai.ai_verantwoording.toelichting)}</span></div>`:""}</div>
+  </div>`;
+}
+
+function renderAI(){
+  const task=S.task; const ev=currentEval(task); if(!ev) return noEval("AI- en taalcheck");
+  const A=ev.ai, H=ev.heur;
+  const lvl=s=>s>=60?"bad":s>=30?"warn":"good";
+  return `<div class="stack">
+  <div class="row"><div style="flex:1;min-width:0"><div class="label">${task} · ${esc(ev.fileName)}</div><h2>AI-gebruik & taal</h2></div>${evalPicker(task)}</div>
+  <div class="banner info small">AI-detectie geeft nooit zekerheid. Ook een docent kan het niet bewijzen. Gebruik dit om te zien welke zinnen <b>als AI kunnen overkomen</b>, en herschrijf ze in je eigen woorden met concrete data en bronnen. AI gebruiken mag (blz. 7), zolang je het verantwoordt.</div>
+  <div class="grid2">
+    <div class="panel stack"><div class="label">Inschatting Claude</div>
+      ${A?`<div class="row" style="align-items:baseline"><span class="bignum">${A.ai_kans}%</span><span class="chip ${lvl(A.ai_kans)}">${esc(A.oordeel)}</span></div><div class="gauge"><b style="left:${Math.max(0,Math.min(100,A.ai_kans))}%"></b></div><p>${esc(A.toelichting)}</p>`:`<p class="muted">${esc(ev.errors?.ai||"Niet beschikbaar")}</p>`}
+    </div>
+    <div class="panel stack"><div class="label">Patroonmeting (automatisch geteld)</div>
+      <div class="row" style="align-items:baseline"><span class="bignum">${H.score}</span><span class="small muted">/100 patroonscore</span></div><div class="gauge"><b style="left:${H.score}%"></b></div>
+      <div class="stats">
+        <div class="stat"><div class="label">Gedachtestreepjes —</div><div class="v">${H.em}</div></div>
+        <div class="stat"><div class="label">AI-woorden</div><div class="v">${H.termHits}</div></div>
+        <div class="stat"><div class="label">Zinslengte-variatie</div><div class="v">${H.cv}</div><div class="small muted">${H.cv<.3?"erg gelijkmatig":H.cv<.42?"vrij gelijkmatig":"natuurlijk"}</div></div>
+        <div class="stat"><div class="label">“Kopje: uitleg”</div><div class="v">${H.colonBullets}</div></div>
+      </div>
+      ${H.terms.length?`<div class="row" style="gap:.3rem">${H.terms.map(([t,c])=>`<span class="chip warn">${esc(t)} ×${c}</span>`).join("")}</div>`:""}
+      <p class="small muted">${H.words} woorden · ${H.sentences} zinnen · gem. ${H.meanLen} woorden per zin${H.emoji?` · ${H.emoji} emoji`:""}${H.curly&&H.straight?" · gemengde aanhalingstekens":""}</p>
+    </div>
+  </div>
+  ${A?.ai_verantwoording?`<div class="panel stack"><div class="row"><h3 style="flex:1">AI-verantwoording</h3>${chipFor(A.ai_verantwoording.aanwezig==="ja"?"aanwezig":A.ai_verantwoording.aanwezig==="deels"?"deels":"ontbreekt")}</div>
+    <div class="row small">${[["prompts_en_output_in_bijlage","Prompts + output in bijlage"],["apa_vermelding","APA-vermelding"],["verificatie_beschreven","Verificatie beschreven"]].map(([k,l])=>{const v=A.ai_verantwoording[k];return `<span class="chip ${v==="ja"?"good":v==="nee"?"bad":""}">${l}: ${esc(v||"?")}</span>`}).join("")}</div>
+    <p>${esc(A.ai_verantwoording.toelichting)}</p><p class="small muted">Studiegids blz. 7 · ${task==="SM1"?"blz. 4 (bijlagen eindpresentatie)":task==="SM2"?"blz. 5 (product SM2)":"blz. 7 (expliciet in de reflectie)"}</p></div>`:""}
+  ${A?.signalen?.length?`<div class="panel stack"><h3>Zinnen die AI-achtig klinken</h3><ul class="list">${A.signalen.map(s=>`<li class="item st-warn">
+    <div class="ihead"><div>${quoteBtn(task,s)}</div><span class="chip">${esc(s.type)}</span></div><p class="small">${esc(s.uitleg)}</p>${s.menselijker?`<div class="tip"><b>Menselijker:</b> ${esc(s.menselijker)}</div>`:""}</li>`).join("")}</ul></div>`:""}
+  ${A?.taal?.length?`<div class="panel stack"><div class="row"><h3 style="flex:1">Taal, spelling & grammatica</h3><span class="small muted mono">${A.taal.length} punten</span></div><ul class="list">${A.taal.map(t=>`<li class="item st-idle">
+    <div class="ihead"><div class="row" style="gap:.4rem"><span class="chip">${esc(t.type)}</span><button class="btn sm ghost" data-q="${esc(t.citaat)}" data-page="${esc(t.pagina||"")}" data-task="${task}">p. ${esc(t.pagina||"?")} ↗</button></div></div>
+    <div class="fix"><div class="from">${esc(t.citaat)}</div><div class="to">${esc(t.correctie)}</div></div>${t.uitleg?`<p class="small muted">${esc(t.uitleg)}</p>`:""}</li>`).join("")}</ul></div>`:""}
+  ${A?.stijl?`<div class="panel stack"><h3>Je schrijfstijl</h3><p>${esc(A.stijl)}</p></div>`:""}
+  </div>`;
+}
+
+function renderSources(){
+  const f=S.srcForm; const list=S.sources;
+  return `<div class="stack">
+  <div><div class="label">Voor alle opdrachten van ${esc(prof().name)}</div><h2>Bronnen & extra materiaal</h2><p class="muted small">Alles wat je hier toevoegt, gaat mee in de beoordeling en de chat. Denk aan DDMA-onderzoeken, Kotler, MDMD H10, feedback van de docent, je PvA of het ontwikkelplan. Claude kan geen links openen, dus plak bij een link ook de belangrijkste tekst.</p></div>
+  <form class="panel stack" id="srcform">
+    <div class="tasksw" role="group" aria-label="Soort bron" style="width:max-content;max-width:100%">${[["pdf","PDF / bestand"],["link","Link"],["text","Tekst"]].map(([k,l])=>`<button type="button" data-srcform="${k}" aria-pressed="${k===f}">${l}</button>`).join("")}</div>
+    <div class="grid2">
+      <div class="field"><label for="srctitle" class="small"><b>Titel</b></label><input type="text" id="srctitle" placeholder="${f==="link"?"DDMA Datagedreven Marketing Onderzoek 2025":"Feedback docent week 4"}"></div>
+      <div class="field"><label for="srctask" class="small"><b>Hoort bij</b></label><select id="srctask"><option value="all">Alle opdrachten</option>${Object.keys(TASKS).map(k=>`<option value="${k}" ${k===S.task?"selected":""}>${k}</option>`).join("")}</select></div>
+    </div>
+    ${f==="pdf"?`<div class="field"><label for="srcfile" class="small"><b>Bestand</b> <span class="muted">PDF of .txt</span></label><input type="file" id="srcfile" accept=".pdf,.txt,.md"></div>`:""}
+    ${f==="link"?`<div class="field"><label for="srcurl" class="small"><b>Link</b></label><input type="url" id="srcurl" placeholder="https://ddma.nl/research-insights/..."></div>`:""}
+    ${f!=="pdf"?`<div class="field"><label for="srctext" class="small"><b>${f==="link"?"Belangrijkste tekst van de pagina (aanrader)":"Tekst"}</b></label><textarea id="srctext" rows="5" placeholder="${f==="link"?"Plak hier de relevante cijfers en passages…":"Plak hier bijv. de feedback van je docent…"}"></textarea></div>`:""}
+    <div class="field"><label for="srcnote" class="small"><b>Notitie</b> <span class="muted">optioneel: waarom is dit relevant?</span></label><input type="text" id="srcnote" placeholder="Benchmark voor mijn data-maturityscan"></div>
+    <div><button class="btn primary" type="submit" ${S.busy.src?"disabled":""}>${S.busy.src?"Bezig met lezen…":"Bron toevoegen"}</button></div>
+  </form>
+  ${list.length?`<div class="stack" style="gap:.6rem">${list.map(s=>`<div class="srcitem"><span class="kind">${esc(s.kind)}</span><div><b style="word-break:break-word">${esc(s.title)}</b>
+    <div class="small muted">${s.task==="all"?"Alle opdrachten":esc(s.task)} · ${fmtDate(s.addedAt)} · ${(s.text||"").length.toLocaleString("nl-NL")} tekens${s.note?" · "+esc(s.note):""}</div>
+    ${s.url?`<a class="small" href="${esc(s.url)}" target="_blank" rel="noopener" style="word-break:break-all">${esc(s.url)}</a>`:""}</div>
+    <button class="btn sm ghost" data-delsrc="${s.id}" aria-label="Verwijder ${esc(s.title)}">Verwijder</button></div>`).join("")}</div>`
+  :`<div class="panel empty"><h3>Nog geen bronnen</h3><p class="small muted">Voeg bijvoorbeeld het DDMA-rapport toe dat je voor SM2 gebruikt, of de feedback uit het consult.</p></div>`}
+  </div>`;
+}
+
+function renderChat(){
+  const task=S.task; const chat=S.chats[task]; const msgs=chat?.messages||[]; const sub=S.subs[task]; const ev=latestEval(task);
+  const sugg=[
+    ev?"Wat zijn de 3 dingen die mijn cijfer het snelst omhoog brengen?":"Wat moet er volgens de studiegids minimaal in "+task+" staan?",
+    task==="SM1"?"Hoe werk ik het cognitief kompas goed uit?":task==="SM2"?"Hoe koppel ik mijn data-maturityscan aan DDMA?":"Hoe schrijf ik een sterke STARRT voor kritisch denken?",
+    "Welke zinnen in mijn stuk klinken het meest als AI?",
+    "Hoe ziet een goede AI-verantwoording eruit volgens APA?"
+  ];
+  return `<div class="stack">
+  <div class="row"><div style="flex:1;min-width:0"><div class="label">Chatbot · ${task}</div><h2>Vraag het over je ${task}</h2><p class="small muted">${sub?`De chatbot kent de studiegids, “${esc(sub.fileName)}”${ev?", je laatste beoordeling":""} en je bronnen.`:`Nog geen document voor ${task}. De chatbot kent wel de studiegids.`}</p></div>
+    ${msgs.length?`<button class="btn sm ghost" data-act="clearchat">Chat wissen</button>`:""}</div>
+  <div class="chat">
+    <div class="msgs" id="msgs">${msgs.length||S.chatCtl?"":`<div class="empty"><h3>Stel je eerste vraag</h3><p class="small muted">Bijvoorbeeld over een criterium uit de rubric of een dia van je eigen stuk.</p></div>`}
+      ${msgs.map(m=>`<div class="msg ${m.role}">${m.role==="user"?esc(m.content).replace(/\n/g,"<br>"):md(m.content)}</div>`).join("")}
+      ${S.chatCtl?`<div class="msg assistant" id="streaming">${S.chatStreaming?md(S.chatStreaming):`<span class="muted">Denkt na…</span>`}</div>`:""}
+    </div>
+    <form class="composer" id="chatform">
+      ${!msgs.length?`<div class="sugg">${sugg.map(s=>`<button type="button" data-sugg="${esc(s)}">${esc(s)}</button>`).join("")}</div>`:""}
+      <div class="row"><textarea id="chatbox" rows="2" placeholder="Typ je vraag… (Enter = versturen, Shift+Enter = nieuwe regel)" aria-label="Je vraag"></textarea>
+      ${S.chatCtl?`<button type="button" class="btn" data-act="stopchat">Stop</button>`:`<button class="btn primary" type="submit" ${S.sample?"":"disabled"}>Verstuur</button>`}</div>
+    </form>
+  </div></div>`;
+}
+
+/* ============ events ============ */
+document.addEventListener("click",e=>{
+  const t=e.target.closest("button,[data-profile]"); if(!t) return;
+  const d=t.dataset;
+  if(d.profile){ loadProfile(d.profile); S.tab="overzicht"; return }
+  if(d.act==="home"){ S.pid=null; render(); return }
+  if(d.act==="noflash"){ S.flash=""; render(); return }
+  if(d.q!==undefined){ openViewer(d.task||S.task,parseInt(d.page)||null,d.q); return }
+  if(d.task){ S.task=d.task; S.flash=""; render(); return }
+  if(d.tab){ S.tab=d.tab; render(); window.scrollTo({top:0}); if(d.tab==="chat") scrollChat(); return }
+  if(d.goto){ const [k,tab]=d.goto.split(":"); S.task=k; S.tab=tab; render(); window.scrollTo({top:0}); return }
+  if(d.act==="grade"){ savePart(S.task,$("#part")?.value||""); runGrade(S.task); return }
+  if(d.act==="stop"){ S.busy[S.pid+S.task]?.ctl?.abort(); return }
+  if(d.ask){ askInChat(d.ask); return }
+  if(d.sugg){ sendChat(d.sugg); return }
+  if(d.act==="stopchat"){ S.chatCtl?.abort(); return }
+  if(d.act==="clearchat"){ S.chats[S.task]={id:S.task,messages:[]}; Store.put(S.pid,"chats",S.task,{messages:[]}).catch(()=>{}); render(); return }
+  if(d.srcform){ S.srcForm=d.srcform; render(); return }
+  if(d.delsrc){ delSource(d.delsrc); return }
+  if(d.delev){ deleteEval(d.delev); return }
+});
+document.addEventListener("change",e=>{
+  if(e.target.id==="file"){ handleUpload(e.target.files[0],S.task); e.target.value="" }
+  if(e.target.id==="part"){ savePart(S.task,e.target.value) }
+  if(e.target.id==="evalpick"){ viewEvalId[S.task]=e.target.value; render() }
+});
+document.addEventListener("submit",e=>{
+  e.preventDefault();
+  if(e.target.id==="chatform"){ const b=$("#chatbox"); const v=b.value; b.value=""; sendChat(v) }
+  if(e.target.id==="srcform"){ addSource(e.target) }
+});
+document.addEventListener("keydown",e=>{ if(e.target.id==="chatbox"&&e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); $("#chatform").requestSubmit() } });
+["dragover","dragenter"].forEach(ev=>document.addEventListener(ev,e=>{const d=e.target.closest?.("#drop"); if(d){e.preventDefault();d.classList.add("over")}}));
+["dragleave","drop"].forEach(ev=>document.addEventListener(ev,e=>{const d=e.target.closest?.("#drop"); if(d){e.preventDefault();d.classList.remove("over"); if(ev==="drop"&&e.dataTransfer.files[0]) handleUpload(e.dataTransfer.files[0],S.task)}}));
+
+/* ============ start ============ */
+(async function init(){
+  render();
+  const c=window.claude;
+  const [db,sample]=c?.use?await Promise.all([c.use("db").catch(()=>null),c.use("sample").catch(()=>null)]):[null,null];
+  Store.db=db; Store.mode=db?"db":"local"; S.sample=sample;
+  if(sample){ try{const l=await sample.limits(); S.imgLimit=l?.images?.maxCount||0}catch{} }
+  let last=null; try{last=localStorage.getItem("smda:last")}catch{}
+  if(last&&PROFILES.some(p=>p.id===last)) loadProfile(last); else render();
+})();
+</script>
